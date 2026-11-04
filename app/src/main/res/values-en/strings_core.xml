@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- core-runtime: errors and titles surfaced by SessionViewModel / AudioEngine -->
+
+    <!-- runtime errors -->
+    <string name="core_error_no_api_key">No API key configured. Add one in Settings and try again.</string>
+    <string name="core_error_offline">No network connection. Check Wi-Fi or mobile data and try again.</string>
+    <string name="core_error_auth">Authentication failed (HTTP 401/403). Check your API key and whether the model is enabled.</string>
+    <string name="core_error_mic_init">Failed to initialize the microphone. Check that microphone permission is granted.</string>
+    <string name="core_error_not_connected">Not connected to the server — the message was not sent.</string>
+    <string name="core_error_reconnecting">Connection lost, reconnecting…</string>
+    <string name="core_error_reconnect_failed">Reconnection failed repeatedly. Check your network and tap Retry.</string>
+    <string name="core_error_connection_closed">Connection closed: %1$s</string>
+    <string name="core_error_server">Server error: %1$s</string>
+    <string name="core_error_report_failed">Failed to generate report: %1$s</string>
+    <string name="core_error_report_unavailable">Text API is not ready, cannot generate a report.</string>
+
+    <!-- in-conversation placeholders -->
+    <string name="core_translation_failed">(translation failed)</string>
+
+    <!-- session titles saved to history -->
+    <string name="core_title_chat">Voice chat</string>
+    <string name="core_title_practice">%1$s practice</string>
+    <string name="core_title_practice_topic">%1$s practice · %2$s</string>
+</resources>

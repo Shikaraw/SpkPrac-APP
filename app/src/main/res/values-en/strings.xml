@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SpkPrac</string>
+
+    <string name="settings">Settings</string>
+    <string name="back">Back</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="close">Close</string>
+    <string name="share">Share</string>
+    <string name="send">Send</string>
+    <string name="retry">Retry</string>
+    <string name="msg_count">%1$d msgs</string>
+
+    <string name="home_no_apikey_hint">No API key yet: open Settings (top right) and paste your API key to start.</string>
+    <string name="mode_chat">Chat</string>
+    <string name="mode_chat_desc">Free voice chat with AI, like a phone call</string>
+    <string name="mode_practice">Speaking Practice</string>
+    <string name="mode_practice_desc">Talk in a target language, AI corrects you</string>
+    <string name="recent_sessions">Recent sessions</string>
+    <string name="no_sessions_hint">No sessions yet — pick a mode above to begin</string>
+
+    <string name="sec_practice_config">Practice setup</string>
+    <string name="practice_language">Practice language</string>
+    <string name="practice_level">Your level</string>
+    <string name="practice_topic">Topic (optional)</string>
+    <string name="practice_topic_hint">Leave empty for free conversation</string>
+    <string name="quick_topics">Quick picks</string>
+    <string name="topic_daily">Daily life</string>
+    <string name="topic_travel">Travel</string>
+    <string name="topic_work">Work</string>
+    <string name="topic_interview">Interview</string>
+    <string name="topic_restaurant">Ordering food</string>
+    <string name="topic_shopping">Shopping</string>
+    <string name="sec_coach_behavior">Coach behavior</string>
+    <string name="correction_policy">Correction frequency</string>
+    <string name="correction_never">Never</string>
+    <string name="correction_sometimes">Sometimes</string>
+    <string name="correction_always">Always</string>
+    <string name="end_report">Generate report after session</string>
+    <string name="end_report_desc">Summarize grammar/vocabulary issues and tips when the call ends</string>
+    <string name="subtitle_translate">Subtitle translation</string>
+    <string name="subtitle_translate_desc">Translate subtitles via a text model</string>
+    <string name="start_practice">Start practice</string>
+
+    <string name="st_connecting">Connecting…</string>
+    <string name="st_reconnecting">Reconnecting…</string>
+    <string name="st_listening">Listening</string>
+    <string name="st_thinking">Thinking…</string>
+    <string name="st_speaking">Speaking</string>
+    <string name="st_ended">Ended</string>
+    <string name="st_failed">Failed</string>
+    <string name="connect_failed_hint">Connection failed. Check network, API key and model (test in Settings).</string>
+    <string name="back_home">Back home</string>
+    <string name="text_input_hint">Type a message…</string>
+    <string name="mute_mic">Mute mic</string>
+    <string name="end_call">End call</string>
+    <string name="text_input">Text input</string>
+    <string name="ptt_hold">Hold to talk</string>
+    <string name="ptt_release">Release to send</string>
+    <string name="practice_report">Practice report</string>
+    <string name="report_generating">Generating report, this may take a while…</string>
+    <string name="report_failed_hint">Report not generated. Tap retry.</string>
+    <string name="mic_permission_needed">Microphone permission required — tap to request again</string>
+
+    <string name="sec_api">API &amp; models</string>
+    <string name="api_key">API Key</string>
+    <string name="api_key_hint">Stored on this device only</string>
+    <string name="protocol_flavor">Protocol flavor</string>
+    <string name="flavor_qwen">Qwen platform</string>
+    <string name="flavor_openai">OpenAI-compatible</string>
+    <string name="rt_endpoint">Realtime endpoint (WSS)</string>
+    <string name="rt_endpoint_hint">Defaults to Qwen qwen3.8-omni-flash-realtime; any compatible server works</string>
+    <string name="rt_model">Realtime model</string>
+    <string name="voice">Voice</string>
+    <string name="voice_hint">e.g. Tina; see platform docs for available voices</string>
+    <string name="text_endpoint">Text endpoint (HTTPS)</string>
+    <string name="text_endpoint_hint">Used for subtitle translation and reports</string>
+    <string name="text_model">Text model</string>
+    <string name="text_model_hint">A cheap flash model is recommended</string>
+    <string name="test_connection">Test connection</string>
+    <string name="sec_behavior">Conversation</string>
+    <string name="vad_mode">Speaking mode</string>
+    <string name="vad_auto">Auto detect</string>
+    <string name="vad_ptt">Push to talk</string>
+    <string name="vad_threshold">VAD threshold: %1$.2f (lower = easier to trigger)</string>
+    <string name="silence_duration">Silence duration: %1$d ms</string>
+    <string name="asr_language">My speech recognition language</string>
+    <string name="asr_auto">Auto detect</string>
+    <string name="chat_prompt">Chat persona instructions</string>
+    <string name="chat_prompt_hint">Role and style for the AI in chat mode</string>
+    <string name="sec_subtitles">Subtitles &amp; translation</string>
+    <string name="ai_subtitle">AI speech subtitles</string>
+    <string name="user_subtitle">My speech subtitles</string>
+    <string name="user_subtitle_desc">Live transcription of what you say</string>
+    <string name="translate_target">Translate to</string>
+    <string name="sec_audio_display">Audio &amp; display</string>
+    <string name="keep_screen_on">Keep screen on during calls</string>
+    <string name="settings_footer">Your API key never leaves this device except to call your chosen provider; usage is billed to your own account.</string>
+
+    <string name="role_me">Me</string>
+    <string name="role_ai">AI</string>
+    <string name="delete_session_title">Delete this session?</string>
+    <string name="delete_session_confirm">The transcript and report will be removed permanently.</string>
+    <!-- audio output -->
+    <string name="set_audio_output">Default audio output</string>
+    <string name="set_audio_output_desc">Follows headphones automatically; pin it here if you prefer</string>
+    <string name="route_auto">Auto (follow system)</string>
+    <string name="route_speaker">Loudspeaker</string>
+    <string name="route_earpiece">Earpiece</string>
+    <string name="route_wired">Wired headset</string>
+    <string name="route_bluetooth">Bluetooth</string>
+    <string name="route_usb">USB audio</string>
+    <string name="route_other">Other device</string>
+    <string name="sess_output">Audio output</string>
+
+    <!-- about / updates -->
+    <string name="set_sec_about">About &amp; updates</string>
+    <string name="set_check_update">Check for updates</string>
+    <string name="set_auto_update">Check automatically</string>
+    <string name="set_auto_update_desc">Checks in the background on launch, at most once per 24 hours</string>
+    <string name="set_update_proxy">Use mirror acceleration</string>
+    <string name="set_update_proxy_desc">Route checks and downloads through gh-proxy when GitHub is slow or blocked</string>
+    <string name="set_version_build">Version %1$s</string>
+    <string name="upd_checking">Checking for updates…</string>
+    <string name="upd_uptodate">You are on the latest version</string>
+    <string name="upd_failed">Check failed, try again later</string>
+    <string name="upd_new_version">New version available</string>
+    <string name="upd_current_fmt">Current version %1$s</string>
+    <string name="upd_notes">What is new</string>
+    <string name="upd_download">Download APK</string>
+    <string name="upd_open_page">Open release page</string>
+    <string name="upd_later">Later</string>
+    <string name="upd_downloading">Download started — tap the notification to install</string>
+</resources>

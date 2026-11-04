@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="detail_export">Export Markdown</string>
+    <string name="detail_copy">Copy all</string>
+    <string name="detail_copied">Copied to clipboard</string>
+    <string name="detail_missing">Session not found or already deleted</string>
+    <string name="detail_language_fmt">Language: %1$s</string>
+</resources>

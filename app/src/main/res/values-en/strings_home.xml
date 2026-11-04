@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_tagline">Full-duplex voice chat · speaking practice</string>
+    <string name="home_stat_sessions">Sessions</string>
+    <string name="home_stat_time">Total time</string>
+    <string name="home_stat_streak">Day streak</string>
+    <string name="home_search_hint">Search sessions by title or language…</string>
+    <string name="home_no_results">No matching sessions</string>
+    <string name="home_delete_title">Delete this session?</string>
+    <string name="home_delete_msg">The transcript and practice report will be deleted permanently.</string>
+    <string name="home_start_chat">Start chatting</string>
+    <string name="home_start_practice">Start practising</string>
+</resources>

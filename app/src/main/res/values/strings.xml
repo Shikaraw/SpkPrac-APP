@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SpkPrac</string>
+
+    <!-- common -->
+    <string name="settings">设置</string>
+    <string name="back">返回</string>
+    <string name="delete">删除</string>
+    <string name="cancel">取消</string>
+    <string name="close">关闭</string>
+    <string name="share">分享</string>
+    <string name="send">发送</string>
+    <string name="retry">重试</string>
+    <string name="msg_count">%1$d 条</string>
+
+    <!-- home -->
+    <string name="home_no_apikey_hint">尚未配置 API Key：点击右上角「设置」，填入千问平台的 API Key 后即可开始对话。</string>
+    <string name="mode_chat">聊天模式</string>
+    <string name="mode_chat_desc">像打电话一样和 AI 自由语音聊天</string>
+    <string name="mode_practice">口语练习</string>
+    <string name="mode_practice_desc">指定语言对话，AI 纠错并给建议</string>
+    <string name="recent_sessions">最近会话</string>
+    <string name="no_sessions_hint">还没有会话记录，选择上方模式开始吧</string>
+
+    <!-- practice setup -->
+    <string name="sec_practice_config">练习配置</string>
+    <string name="practice_language">练习语言</string>
+    <string name="practice_level">你的水平</string>
+    <string name="practice_topic">话题（可选）</string>
+    <string name="practice_topic_hint">留空则自由聊天，AI 会主动挑话题</string>
+    <string name="quick_topics">快速选择</string>
+    <string name="topic_daily">日常闲聊</string>
+    <string name="topic_travel">旅行</string>
+    <string name="topic_work">职场工作</string>
+    <string name="topic_interview">面试模拟</string>
+    <string name="topic_restaurant">餐厅点餐</string>
+    <string name="topic_shopping">购物</string>
+    <string name="sec_coach_behavior">教练行为</string>
+    <string name="correction_policy">纠错频率</string>
+    <string name="correction_never">从不</string>
+    <string name="correction_sometimes">偶尔</string>
+    <string name="correction_always">积极</string>
+    <string name="end_report">结束后生成练习报告</string>
+    <string name="end_report_desc">对话结束后自动总结语法与用词问题并给建议</string>
+    <string name="subtitle_translate">字幕翻译</string>
+    <string name="subtitle_translate_desc">用文本模型把字幕翻译成目标语言</string>
+    <string name="start_practice">开始练习</string>
+
+    <!-- session -->
+    <string name="st_connecting">连接中…</string>
+    <string name="st_reconnecting">重连中…</string>
+    <string name="st_listening">聆听中</string>
+    <string name="st_thinking">思考中…</string>
+    <string name="st_speaking">正在讲话</string>
+    <string name="st_ended">已结束</string>
+    <string name="st_failed">连接失败</string>
+    <string name="connect_failed_hint">连接失败，请检查网络、API Key 与模型配置（右上角设置里可测试连接）</string>
+    <string name="back_home">返回首页</string>
+    <string name="text_input_hint">输入文字发送…</string>
+    <string name="mute_mic">麦克风静音</string>
+    <string name="end_call">挂断</string>
+    <string name="text_input">文字输入</string>
+    <string name="ptt_hold">按住说话</string>
+    <string name="ptt_release">松开发送</string>
+    <string name="practice_report">练习报告</string>
+    <string name="report_generating">报告生成中，可能需要几十秒…</string>
+    <string name="report_failed_hint">报告未生成，可点击重试</string>
+    <string name="mic_permission_needed">需要麦克风权限：点此重新申请，授权后即可语音对话</string>
+
+    <!-- settings -->
+    <string name="sec_api">接口与模型</string>
+    <string name="api_key">API Key</string>
+    <string name="api_key_hint">仅保存在本机，用于直连你选择的服务商</string>
+    <string name="protocol_flavor">协议风格</string>
+    <string name="flavor_qwen">千问平台</string>
+    <string name="flavor_openai">OpenAI 兼容</string>
+    <string name="rt_endpoint">实时对话地址 (WSS)</string>
+    <string name="rt_endpoint_hint">默认千问 qwen3.8-omni-flash-realtime，可换成其他兼容服务</string>
+    <string name="rt_model">实时模型名</string>
+    <string name="voice">音色</string>
+    <string name="voice_hint">如 Tina；可用音色见平台文档</string>
+    <string name="text_endpoint">文本接口地址 (HTTPS)</string>
+    <string name="text_endpoint_hint">用于字幕翻译与练习报告</string>
+    <string name="text_model">文本模型名</string>
+    <string name="text_model_hint">建议选便宜的 flash 系列模型</string>
+    <string name="test_connection">测试连接</string>
+    <string name="sec_behavior">对话行为</string>
+    <string name="vad_mode">说话模式</string>
+    <string name="vad_auto">自动检测</string>
+    <string name="vad_ptt">按键说话</string>
+    <string name="vad_threshold">VAD 灵敏度：%1$.2f（越低越容易触发）</string>
+    <string name="silence_duration">静音判定时长：%1$d ms</string>
+    <string name="asr_language">我的语音识别语言</string>
+    <string name="asr_auto">自动检测</string>
+    <string name="chat_prompt">聊天模式人设指令</string>
+    <string name="chat_prompt_hint">聊天模式下 AI 扮演的角色与风格要求</string>
+    <string name="sec_subtitles">字幕与翻译</string>
+    <string name="ai_subtitle">AI 语音字幕</string>
+    <string name="user_subtitle">我的语音识别字幕</string>
+    <string name="user_subtitle_desc">实时转写你说的话</string>
+    <string name="translate_target">翻译目标语言</string>
+    <string name="sec_audio_display">音频与显示</string>
+    <string name="keep_screen_on">通话期间屏幕常亮</string>
+    <string name="settings_footer">API Key 只保存在本机应用数据中；调用费用由你在对应平台的账户承担。</string>
+
+    <!-- session detail -->
+    <string name="role_me">我</string>
+    <string name="role_ai">AI</string>
+    <string name="delete_session_title">删除这条会话？</string>
+    <string name="delete_session_confirm">会话记录与练习报告将一并删除，不可恢复。</string>
+    <!-- audio output -->
+    <string name="set_audio_output">默认音频输出</string>
+    <string name="set_audio_output_desc">插上耳机后会自动跟随；也可在此固定</string>
+    <string name="route_auto">自动（跟随系统）</string>
+    <string name="route_speaker">外放</string>
+    <string name="route_earpiece">听筒</string>
+    <string name="route_wired">有线耳机</string>
+    <string name="route_bluetooth">蓝牙设备</string>
+    <string name="route_usb">USB 音频</string>
+    <string name="route_other">其他设备</string>
+    <string name="sess_output">音频输出</string>
+
+    <!-- about / updates -->
+    <string name="set_sec_about">关于与更新</string>
+    <string name="set_check_update">检查更新</string>
+    <string name="set_auto_update">自动检查更新</string>
+    <string name="set_auto_update_desc">启动时后台检查新版本，每 24 小时最多一次</string>
+    <string name="set_update_proxy">使用镜像加速</string>
+    <string name="set_update_proxy_desc">GitHub 较慢或不可达时，经 gh-proxy 镜像检查与下载</string>
+    <string name="set_version_build">版本 %1$s</string>
+    <string name="upd_checking">正在检查更新…</string>
+    <string name="upd_uptodate">已是最新版本</string>
+    <string name="upd_failed">检查失败，请稍后重试</string>
+    <string name="upd_new_version">发现新版本</string>
+    <string name="upd_current_fmt">当前版本 %1$s</string>
+    <string name="upd_notes">更新内容</string>
+    <string name="upd_download">下载 APK</string>
+    <string name="upd_open_page">打开 Release 页面</string>
+    <string name="upd_later">稍后</string>
+    <string name="upd_downloading">已开始下载，完成后点通知安装</string>
+</resources>

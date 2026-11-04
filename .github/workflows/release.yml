@@ -1,0 +1,25 @@
+name: Release APK
+
+# Pushing a v* tag publishes the signed APK that lives in dist/ as a GitHub Release.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create or update the release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SpkPrac ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          files: dist/*.apk
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false

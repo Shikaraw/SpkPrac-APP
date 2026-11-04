@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="detail_export">导出 Markdown</string>
+    <string name="detail_copy">复制全文</string>
+    <string name="detail_copied">已复制到剪贴板</string>
+    <string name="detail_missing">会话不存在或已被删除</string>
+    <string name="detail_language_fmt">语言：%1$s</string>
+</resources>

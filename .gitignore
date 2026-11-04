@@ -1,0 +1,17 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+.kotlin/
+
+# Signing material stays local: this repository is public, and a published keystore
+# lets anyone sign builds that pretend to be this app.
+keystore.properties
+*.jks
+*.keystore

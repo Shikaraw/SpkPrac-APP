@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sess_chat">Chat</string>
+    <string name="sess_practice_fmt">Practice · %1$s</string>
+    <string name="sess_jump_latest">Jump to latest</string>
+    <string name="sess_copy">Copy</string>
+    <string name="sess_copied">Copied to clipboard</string>
+    <string name="sess_regenerate">Regenerate</string>
+    <string name="sess_empty_title">Put on your headset and start talking</string>
+    <string name="sess_empty_hint">Or tap the keyboard icon to type instead</string>
+    <string name="sess_empty_practice">Practise like a real conversation</string>
+    <string name="sess_turn_fmt">Turn %1$d</string>
+    <string name="sess_report_ready">Report saved with this session</string>
+    <string name="sess_report_empty">The report came back empty</string>
+</resources>

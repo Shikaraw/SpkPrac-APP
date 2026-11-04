@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- core-runtime: errors and titles surfaced by SessionViewModel / AudioEngine -->
+
+    <!-- runtime errors -->
+    <string name="core_error_no_api_key">未配置 API Key，请先到「设置」中填写后重试</string>
+    <string name="core_error_offline">当前没有网络连接，请检查 Wi-Fi 或移动数据后重试</string>
+    <string name="core_error_auth">鉴权失败（HTTP 401/403），请检查 API Key 是否正确、模型是否已开通</string>
+    <string name="core_error_mic_init">麦克风初始化失败，无法开始语音对话，请检查是否已授予录音权限</string>
+    <string name="core_error_not_connected">尚未连接服务器，消息未发送，请稍后重试</string>
+    <string name="core_error_reconnecting">连接中断，正在重连…</string>
+    <string name="core_error_reconnect_failed">多次重连失败，请检查网络后点「重试」</string>
+    <string name="core_error_connection_closed">连接已断开：%1$s</string>
+    <string name="core_error_server">服务端错误：%1$s</string>
+    <string name="core_error_report_failed">报告生成失败：%1$s</string>
+    <string name="core_error_report_unavailable">文本接口未就绪，暂时无法生成报告</string>
+
+    <!-- in-conversation placeholders -->
+    <string name="core_translation_failed">（翻译失败）</string>
+
+    <!-- session titles saved to history -->
+    <string name="core_title_chat">语音聊天</string>
+    <string name="core_title_practice">%1$s练习</string>
+    <string name="core_title_practice_topic">%1$s练习 · %2$s</string>
+</resources>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="set_sec_appearance">Appearance &amp; motion</string>
+    <string name="set_theme">Theme</string>
+    <string name="set_theme_system">System</string>
+    <string name="set_theme_light">Light</string>
+    <string name="set_theme_dark">Dark</string>
+    <string name="set_caption_size">Caption size</string>
+    <string name="set_caption_small">S</string>
+    <string name="set_caption_medium">M</string>
+    <string name="set_caption_large">L</string>
+    <string name="set_animations">Interface motion</string>
+    <string name="set_animations_desc">Aurora background, voice orb and bubble animations; off saves battery</string>
+    <string name="set_haptics">Haptic feedback</string>
+    <string name="set_haptics_desc">A brief vibration on buttons and push-to-talk</string>
+
+    <string name="set_auto_reconnect">Auto reconnect</string>
+    <string name="set_auto_reconnect_desc">Silently recover the session on network hiccups</string>
+    <string name="set_barge_in">Allow interrupting the AI</string>
+    <string name="set_barge_in_desc">Start talking and the AI stops immediately</string>
+    <string name="set_chat_lang">Chat reply language</string>
+    <string name="set_chat_lang_auto">Match what I speak</string>
+
+    <string name="set_sec_data">Data</string>
+    <string name="set_export_all">Export all sessions</string>
+    <string name="set_export_all_desc">Write every session and report to one text file</string>
+    <string name="set_clear_history">Clear all sessions</string>
+    <string name="set_clear_history_title">Clear all sessions?</string>
+    <string name="set_clear_history_msg">Every session and practice report will be deleted permanently.</string>
+    <string name="set_clear_key">Clear API key</string>
+    <string name="set_clear_key_title">Clear the API key?</string>
+    <string name="set_clear_key_msg">You will need to enter it again to start talking. Other settings stay.</string>
+    <string name="set_version">SpkPrac %1$s</string>
+    <string name="set_export_empty">Nothing to export yet</string>
+    <string name="set_export_ok">Exported</string>
+    <string name="set_cleared">Cleared</string>
+
+    <string name="set_test_ok">✓ Connected, model is available</string>
+    <string name="set_test_auth">✗ Auth failed — check the API key and model access</string>
+    <string name="set_test_timeout">✗ Timed out — check network and endpoint</string>
+    <string name="set_test_failed">✗ Connection failed</string>
+
+    <string name="set_voice_custom">Custom voice name</string>
+    <string name="set_mic_gain">Mic gain: %1$.1fx</string>
+    <string name="set_mic_gain_desc">Raise it when you sound faint, lower it in noisy rooms</string>
+    <string name="set_waveform">Show level meter</string>
+    <string name="set_waveform_desc">Display live microphone level during calls</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sess_chat">聊天</string>
+    <string name="sess_practice_fmt">练习 · %1$s</string>
+    <string name="sess_jump_latest">回到最新</string>
+    <string name="sess_copy">复制</string>
+    <string name="sess_copied">已复制到剪贴板</string>
+    <string name="sess_regenerate">重新生成</string>
+    <string name="sess_empty_title">戴上耳机，开口说话吧</string>
+    <string name="sess_empty_hint">也可以点右下角键盘图标改用文字输入</string>
+    <string name="sess_empty_practice">像真人对话一样开口练习吧</string>
+    <string name="sess_turn_fmt">第 %1$d 轮</string>
+    <string name="sess_report_ready">报告已保存到会话记录</string>
+    <string name="sess_report_empty">报告内容为空</string>
+</resources>

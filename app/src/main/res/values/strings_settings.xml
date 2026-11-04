@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="set_sec_appearance">外观与动效</string>
+    <string name="set_theme">主题模式</string>
+    <string name="set_theme_system">跟随系统</string>
+    <string name="set_theme_light">浅色</string>
+    <string name="set_theme_dark">深色</string>
+    <string name="set_caption_size">字幕字号</string>
+    <string name="set_caption_small">小</string>
+    <string name="set_caption_medium">中</string>
+    <string name="set_caption_large">大</string>
+    <string name="set_animations">界面动效</string>
+    <string name="set_animations_desc">背景流光、语音球与气泡动画；关闭更省电</string>
+    <string name="set_haptics">触感反馈</string>
+    <string name="set_haptics_desc">按键与按住说话时轻微震动</string>
+
+    <string name="set_auto_reconnect">断线自动重连</string>
+    <string name="set_auto_reconnect_desc">网络抖动时自动尝试恢复会话</string>
+    <string name="set_barge_in">允许打断 AI</string>
+    <string name="set_barge_in_desc">你一开口，AI 立刻停下来听你说</string>
+    <string name="set_chat_lang">聊天模式回复语言</string>
+    <string name="set_chat_lang_auto">跟随我说的话</string>
+
+    <string name="set_sec_data">数据管理</string>
+    <string name="set_export_all">导出全部会话</string>
+    <string name="set_export_all_desc">把所有会话与报告导出为一个文本文件</string>
+    <string name="set_clear_history">清空全部会话</string>
+    <string name="set_clear_history_title">清空全部会话？</string>
+    <string name="set_clear_history_msg">所有会话记录与练习报告都会被删除，且无法恢复。</string>
+    <string name="set_clear_key">清除 API Key</string>
+    <string name="set_clear_key_title">清除 API Key？</string>
+    <string name="set_clear_key_msg">清除后需要重新填写才能开始对话，其余设置保留。</string>
+    <string name="set_version">SpkPrac %1$s</string>
+    <string name="set_export_empty">没有可导出的会话</string>
+    <string name="set_export_ok">已导出</string>
+    <string name="set_cleared">已清除</string>
+
+    <string name="set_test_ok">✓ 连接成功，模型可用</string>
+    <string name="set_test_auth">✗ 鉴权失败，请检查 API Key 与模型权限</string>
+    <string name="set_test_timeout">✗ 连接超时，请检查网络与接口地址</string>
+    <string name="set_test_failed">✗ 连接失败</string>
+
+    <string name="set_voice_custom">自定义音色名</string>
+    <string name="set_mic_gain">麦克风增益：%1$.1fx</string>
+    <string name="set_mic_gain_desc">声音太小可调高，环境嘈杂时调低</string>
+    <string name="set_waveform">显示音量波形</string>
+    <string name="set_waveform_desc">在通话界面显示麦克风实时电平</string>
+</resources>
