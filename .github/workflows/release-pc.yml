@@ -1,0 +1,26 @@
+name: Release Windows build
+
+# Pushing a `pc-v*` tag publishes the single-file Windows exe from PC/dist.
+# The prefix keeps the Windows release completely separate from the Android one.
+on:
+  push:
+    tags: ['pc-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create or update the release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SpkPrac for Windows ${{ github.ref_name }}
+          body_path: PC/RELEASE_NOTES.md
+          files: PC/dist/*.exe
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false

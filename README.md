@@ -6,6 +6,23 @@ Android 端实时语音对话应用：接入千问开放平台 **qwen3.8-omni-fl
 
 仓库：<https://github.com/Shikaraw/SpkPrac-APP> · 下载：<https://github.com/Shikaraw/SpkPrac-APP/releases>
 
+## Windows 桌面版
+
+仓库里的 [`PC/`](PC/README.md) 是同功能的 Windows 移植版：
+
+- 技术栈 **Tauri v2 + Rust + 原生 Web 前端 + Web Audio API**
+- 单文件 **SpkPrac.exe，3.97 MB**，无需安装程序或运行库
+- 侧边栏 + 双栏会话布局、深浅色主题、Aurora 流光背景、Canvas 语音球
+- 麦克风与扬声器可分别选择；Chromium 的回声消除实测生效
+- 发布使用独立标签 `pc-v*`，不会与 Android 的 APK 更新混淆
+
+构建：
+
+    cd PC
+    cargo build --release
+
+产物：`PC/target/release/SpkPrac.exe`
+
 ## 功能
 
 ### 聊天模式

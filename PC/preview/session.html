@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-animations="on">
+  <head>
+    <meta charset="utf-8" />
+    <base href="../ui/" />
+    <title>SpkPrac — session preview</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/screens.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" id="brand-mark"></div>
+          <div class="brand-text">
+            <div class="brand-name">SpkPrac</div>
+            <div class="brand-sub">Voice · Practice</div>
+          </div>
+        </div>
+        <nav class="nav" id="nav"></nav>
+        <div class="sidebar-foot">
+          <div class="foot-line">
+            <span class="foot-text" id="foot-theme-label"></span>
+            <button class="btn btn-icon btn-sm" id="theme-toggle"></button>
+          </div>
+          <div class="foot-line"><span class="foot-text faint" id="foot-version"></span></div>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="page-header" id="page-header"></header>
+        <div class="page-body" id="page-body"></div>
+      </main>
+    </div>
+    <div id="session-root"></div>
+    <div id="dialog-root"></div>
+    <div class="toasts" id="toasts"></div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/markdown.js"></script>
+    <script src="js/orb.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/rt.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/screens/home.js"></script>
+    <script src="js/screens/practice.js"></script>
+    <script src="js/screens/session.js"></script>
+    <script src="js/screens/detail.js"></script>
+    <script src="js/screens/settings.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+      /* Drives the real state machine with a fake transport and fake audio so the layout can be
+         reviewed without a network or a microphone. Preview only — never bundled. */
+      async function demo() {
+        await new Promise(function (r) {
+          setTimeout(r, 500);
+        });
+
+        await SP.store.patch({ apiKey: "sk-demo-preview" }, "preview");
+        SP.api.rtConnect = async function () {
+          setTimeout(function () {
+            SP.api._emitRt({ type: "session.created", session: { model: "demo" } });
+          }, 60);
+        };
+        SP.api.rtSend = function () { return true; };
+        SP.api.rtClose = function () {};
+        SP.audio.prime = async function () {};
+        SP.audio.start = async function (opts) {
+          setInterval(function () {
+            if (opts.onLevel) opts.onLevel(0.15 + Math.random() * 0.55);
+          }, 90);
+          return true;
+        };
+        SP.audio.stop = function () {};
+        SP.audio.setMuted = function () {};
+        SP.audio.setTransmit = function () {};
+        SP.audio.flush = function () {};
+        SP.audio.playPcm = function () {};
+
+        SP.screens.session.open({
+          mode: "PRACTICE",
+          pracLang: "en",
+          pracLevel: "B1-B2",
+          pracTopic: "点餐",
+          policy: "SOMETIMES",
+        });
+
+        var t = 700;
+        function at(ms, fn) { setTimeout(fn, ms); }
+
+        at(t, function () { SP.api._emitRt({ type: "session.updated" }); });
+        t += 250;
+        at(t, function () {
+          SP.api._emitRt({
+            type: "conversation.item.input_audio_transcription.delta",
+            item_id: "u1",
+            text: "I want to order",
+          });
+        });
+        t += 300;
+        at(t, function () {
+          SP.api._emitRt({
+            type: "conversation.item.input_audio_transcription.completed",
+            item_id: "u1",
+            transcript: "I want to order a coffee and a croissant.",
+          });
+        });
+        t += 250;
+        at(t, function () { SP.api._emitRt({ type: "response.created", response_id: "r1" }); });
+        t += 400;
+        at(t, function () {
+          SP.api._emitRt({
+            type: "response.audio_transcript.delta",
+            response_id: "r1",
+            delta: "Great choice! ",
+          });
+        });
+        t += 300;
+        at(t, function () {
+          SP.api._emitRt({
+            type: "response.audio_transcript.delta",
+            response_id: "r1",
+            delta: "Would you like your coffee black or with milk?",
+          });
+        });
+        t += 400;
+        at(t, function () {
+          SP.api._emitRt({ type: "response.done", response: { status: "completed", id: "r1" } });
+        });
+        t += 200;
+        at(t, function () {
+          SP.api._emitRt({
+            type: "conversation.item.input_audio_transcription.completed",
+            item_id: "u2",
+            transcript: "With milk please. And how much is the total?",
+          });
+        });
+        t += 300;
+        at(t, function () { SP.api._emitRt({ type: "response.created", response_id: "r2" }); });
+        t += 500;
+        at(t, function () {
+          SP.api._emitRt({
+            type: "response.audio_transcript.delta",
+            response_id: "r2",
+            delta: "That comes to five euros fifty. Small correction: it is more natural to say",
+          });
+        });
+      }
+      demo();
+    </script>
+  </body>
+</html>
