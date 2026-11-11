@@ -15,10 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Read version from the tag
+        id: ver
+        shell: bash
+        run: echo "version=${GITHUB_REF_NAME#pc-v}" >> "$GITHUB_OUTPUT"
+
       - name: Create or update the release
         uses: softprops/action-gh-release@v2
         with:
-          name: SpkPrac for Windows ${{ github.ref_name }}
+          name: SpkPrac for Windows ${{ steps.ver.outputs.version }}
           body_path: PC/RELEASE_NOTES.md
           files: PC/dist/*.exe
           fail_on_unmatched_files: true
