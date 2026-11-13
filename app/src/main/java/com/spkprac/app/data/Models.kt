@@ -40,6 +40,33 @@ data class StoredSession(
     val report: PracticeReport? = null
 )
 
+/**
+ * A voice cloned through the voice-enrollment API and cached locally (spec §4).
+ *
+ * [voiceId] is the server primary key; [name] is the user's local display name and never leaves
+ * the device. [targetModel] is empty when the server has not told us which model the voice binds
+ * to (`list_voice` does not return it — see spec §4).
+ */
+@Serializable
+data class ClonedVoice(
+    val voiceId: String,
+    val name: String,
+    val targetModel: String = "",
+    /** DEPLOYING / OK / UNDEPLOYED, see spec §2.4. */
+    val status: String = "DEPLOYING",
+    val createdAt: Long = 0L,
+    /** Epoch ms of the last successful local↔server sync. */
+    val updatedAt: Long = 0L,
+    /** Original file name; display only. */
+    val audioName: String? = null
+) {
+    companion object {
+        const val DEPLOYING = "DEPLOYING"
+        const val OK = "OK"
+        const val UNDEPLOYED = "UNDEPLOYED"
+    }
+}
+
 /** Aggregate numbers shown on the home screen. */
 data class HistoryStats(
     val sessions: Int = 0,

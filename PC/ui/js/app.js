@@ -17,9 +17,12 @@
 
   function renderNav() {
     const nav = document.getElementById("nav");
+    // The voice management/detail pages live under Settings, so keep that nav item lit.
+    const activeRoute =
+      app.route === "voices" || app.route === "voiceDetail" ? "settings" : app.route;
     nav.innerHTML = NAV.map(
       (item) => `
-      <button class="nav-item ${app.route === item.id ? "active" : ""}" data-nav="${item.id}">
+      <button class="nav-item ${activeRoute === item.id ? "active" : ""}" data-nav="${item.id}">
         ${icon(item.icon, 18)}
         <span class="nav-label">${esc(t(item.labelKey))}</span>
       </button>`
@@ -95,13 +98,20 @@
     if (!parts.length) return null;
     const route = parts[0];
     if (route === "detail" && parts[1]) return { route, params: { id: decodeURIComponent(parts[1]) } };
+    if (route === "voice" && parts[1]) {
+      return { route: "voiceDetail", params: { id: decodeURIComponent(parts[1]) } };
+    }
     return { route, params: null };
   }
 
   function writeHash(route, params) {
     let next = "#/" + route;
-    if (route === "detail" && params && params.id) {
-      next += "/" + encodeURIComponent(params.id);
+    if ((route === "detail" || route === "voiceDetail") && params && params.id) {
+      next =
+        "#/" +
+        (route === "voiceDetail" ? "voice" : "detail") +
+        "/" +
+        encodeURIComponent(params.id);
     }
     if (location.hash !== next) {
       // file:// previews cannot rewrite history; the real app runs on http://tauri.localhost.

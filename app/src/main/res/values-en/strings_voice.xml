@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- voice presets + sound cloning (docs/voice-clone-spec.md §6) -->
+
+    <!-- settings voice block -->
+    <string name="voice_manage">Manage voices</string>
+    <string name="voice_custom">Custom</string>
+    <string name="voice_group_system">System voices</string>
+    <string name="voice_group_mine">My voices</string>
+    <string name="voice_clone_endpoint">Voice-clone endpoint (HTTPS)</string>
+    <string name="voice_clone_endpoint_hint">Defaults to the Bailian Beijing region; change it for another workspace or region</string>
+
+    <!-- voice manager -->
+    <string name="voice_title">My voices</string>
+    <string name="voice_add">Add voice</string>
+    <string name="voice_refresh">Refresh</string>
+    <string name="voice_empty">No cloned voices yet</string>
+    <string name="voice_empty_desc">Upload a clear 10–20 second recording to clone your own voice.</string>
+    <string name="voice_name">Voice name</string>
+    <string name="voice_name_hint">Give this voice a name</string>
+    <string name="voice_pick_audio">Choose audio file</string>
+    <string name="voice_pick_change">Choose another file</string>
+    <string name="voice_audio_tip">WAV / MP3 / M4A, 5–60 seconds, up to 10 MB</string>
+    <string name="voice_audio_content_tip">Audio must contain at least 3 seconds of clear continuous speech, with no music or background noise</string>
+    <string name="voice_create">Create voice</string>
+    <string name="voice_creating">Creating…</string>
+    <string name="voice_uploading">Uploading audio…</string>
+    <string name="voice_file_reading">Reading audio…</string>
+    <string name="voice_deploying">Under review</string>
+    <string name="voice_ok">Ready</string>
+    <string name="voice_undeployed">Rejected</string>
+    <string name="voice_unknown_model">Unknown model</string>
+    <string name="voice_unknown">Unknown</string>
+    <string name="voice_set_current">In use</string>
+    <string name="voice_current_set">Set as current voice</string>
+    <string name="voice_use_title">Use as current voice?</string>
+    <string name="voice_use_message">“%1$s” is ready. Use it now?</string>
+    <string name="voice_use_confirm">Use now</string>
+    <string name="voice_warn_still_deploying">Still under review — refresh the status in the voice manager later</string>
+
+    <!-- add flow validation -->
+    <string name="voice_audio_selected">Selected: %1$s · %2$d s · %3$s MB</string>
+    <string name="voice_audio_selected_unknown">Selected: %1$s · %2$s MB (duration unknown)</string>
+    <string name="voice_err_name_empty">Enter a voice name</string>
+    <string name="voice_err_format">Unsupported audio format — use WAV / MP3 / M4A</string>
+    <string name="voice_err_size">Audio file is larger than 10 MB</string>
+    <string name="voice_err_too_short">Audio is too short — at least 5 seconds required</string>
+    <string name="voice_err_too_long">Audio is too long — 60 seconds maximum</string>
+    <string name="voice_err_sample_rate">Sample rate is below 24 kHz (%1$d Hz) — use a higher-quality recording</string>
+    <string name="voice_warn_channels">Stereo audio uses the first channel only — converting to mono is recommended</string>
+    <string name="voice_err_read">Cannot read the selected file — pick it again</string>
+    <string name="voice_warn_duration">10–20 second audio works best</string>
+    <string name="voice_err_no_key">Add your API key in Settings first</string>
+    <string name="voice_create_failed">Creation failed: %1$s</string>
+    <string name="voice_err_request">Request failed: %1$s</string>
+
+    <!-- voice detail -->
+    <string name="voice_detail">Voice details</string>
+    <string name="voice_voice_id">Voice ID</string>
+    <string name="voice_target_model">Bound model</string>
+    <string name="voice_created_at">Created</string>
+    <string name="voice_synced_at">Last sync</string>
+    <string name="voice_source_file">Source file</string>
+    <string name="voice_copy_id">Copy ID</string>
+    <string name="voice_copied">Copied</string>
+    <string name="voice_rename">Rename</string>
+    <string name="voice_rename_title">Rename voice</string>
+    <string name="voice_save">Save</string>
+    <string name="voice_delete">Delete voice</string>
+    <string name="voice_delete_confirm">Delete “%1$s”? This cannot be undone and the voice will disappear from the list.</string>
+    <string name="voice_delete_done">Voice deleted</string>
+    <string name="voice_delete_failed">Delete failed: %1$s</string>
+    <string name="voice_not_found">Voice not found — it may have been deleted</string>
+    <string name="voice_status_hint_deploying">Under review — this usually takes a few minutes</string>
+    <string name="voice_status_hint_ok">Approved — selectable in the voice list</string>
+    <string name="voice_status_hint_undeployed">Rejected — recreate it with a cleaner recording</string>
+    <string name="voice_status_refreshed">Status refreshed</string>
+    <string name="voice_refresh_failed">Refresh failed: %1$s</string>
+    <string name="voice_created">Voice created</string>
+</resources>

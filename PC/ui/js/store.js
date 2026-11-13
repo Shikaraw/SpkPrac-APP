@@ -5,8 +5,8 @@
   const listeners = [];
   const state = {
     settings: null,
-    info: { version: "1.0.0", dataDir: "", sessionsDir: "", platform: "windows" },
-    voices: ["Tina", "Ethan", "Cherry", "Serena", "Dylan", "Jada"],
+    info: { version: "0.1.1", dataDir: "", sessionsDir: "", platform: "windows" },
+    voices: [],
   };
 
   const CAPTION_SCALE = { SMALL: 0.9, MEDIUM: 1, LARGE: 1.16 };
@@ -106,6 +106,10 @@
       translateLang: "zh",
       inputDeviceId: "",
       outputDeviceId: "",
+      voice: "Tina",
+      cloneEndpoint:
+        "https://cn-beijing.maas.qianwenaiapi.com/api/v1/services/audio/tts/customization",
+      clonedVoices: [],
     };
     Object.keys(defaults).forEach((key) => {
       if (state.settings[key] === undefined || state.settings[key] === null) {

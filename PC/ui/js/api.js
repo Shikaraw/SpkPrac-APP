@@ -24,6 +24,9 @@
             "https://maas.qianwenaiapi.com/compatible-mode/v1/chat/completions",
           textModel: "qwen3.8-flash",
           voice: "Tina",
+          cloneEndpoint:
+            "https://cn-beijing.maas.qianwenaiapi.com/api/v1/services/audio/tts/customization",
+          clonedVoices: [],
           vadMode: "AUTO",
           vadThreshold: 0.5,
           silenceMs: 600,
@@ -103,7 +106,7 @@
 
   const mock = {
     app_info: () => ({
-      version: "1.0.0",
+      version: "0.1.1",
       dataDir: "C:\\Users\\You\\AppData\\Roaming\\com.spkprac.pc",
       sessionsDir: "C:\\Users\\You\\AppData\\Roaming\\com.spkprac.pc\\sessions",
       platform: "windows",
@@ -113,7 +116,40 @@
       localStorage.setItem(MOCK_KEY, JSON.stringify(settings));
       return null;
     },
-    settings_voices: () => ["Tina", "Ethan", "Cherry", "Serena", "Dylan", "Jada"],
+    settings_voices: () =>
+      (window.SP && SP.voice && SP.voice.PRESETS ? SP.voice.PRESETS.slice() : []),
+    // Browser preview: the cloned-voice endpoints are simulated from localStorage so the
+    // management/detail screens can be reviewed without a key or a network.
+    voice_list: () => {
+      const list = mockSettings().clonedVoices || [];
+      return list.map((v) => ({
+        voiceId: v.voiceId,
+        status: v.status,
+        gmtCreate: "",
+        gmtModified: "",
+      }));
+    },
+    voice_create: ({ prefix }) => ({
+      voiceId: "mock-" + (prefix || "voice") + "-" + Math.random().toString(36).slice(2, 8),
+    }),
+    voice_query: ({ voiceId }) => {
+      const found = (mockSettings().clonedVoices || []).find((v) => v.voiceId === voiceId);
+      return {
+        voiceId,
+        status: found ? found.status : "OK",
+        targetModel: found ? found.targetModel : "",
+        gmtCreate: "",
+        gmtModified: "",
+        resourceLink: "",
+      };
+    },
+    voice_update: () => null,
+    voice_delete: ({ voiceId }) => {
+      const s = mockSettings();
+      s.clonedVoices = (s.clonedVoices || []).filter((v) => v.voiceId !== voiceId);
+      localStorage.setItem(MOCK_KEY, JSON.stringify(s));
+      return null;
+    },
     sessions_list: () => {
       const stored = mockSessions();
       return (stored.length ? stored : sample).map((s) => s.meta);
@@ -200,6 +236,32 @@
     getSettings: () => call("settings_get"),
     saveSettings: (settings) => call("settings_save", { settings }),
     voices: () => call("settings_voices"),
+    voiceList: (apiKey, endpoint, model) =>
+      call("voice_list", { apiKey, endpoint, model }),
+    voiceCreate: (payload) =>
+      call("voice_create", {
+        apiKey: payload.apiKey,
+        endpoint: payload.endpoint,
+        model: payload.model,
+        targetModel: payload.targetModel,
+        prefix: payload.prefix,
+        audioBase64: payload.audioBase64,
+        audioMime: payload.audioMime,
+        enablePreprocess: payload.enablePreprocess,
+      }),
+    voiceQuery: (apiKey, endpoint, model, voiceId) =>
+      call("voice_query", { apiKey, endpoint, model, voiceId }),
+    voiceUpdate: (apiKey, endpoint, model, voiceId, audioBase64, audioMime) =>
+      call("voice_update", {
+        apiKey,
+        endpoint,
+        model,
+        voiceId,
+        audioBase64,
+        audioMime,
+      }),
+    voiceDelete: (apiKey, endpoint, model, voiceId) =>
+      call("voice_delete", { apiKey, endpoint, model, voiceId }),
     listSessions: () => call("sessions_list"),
     loadSession: (id) => call("sessions_load", { id }),
     saveSession: (session) => call("sessions_save", { session }),

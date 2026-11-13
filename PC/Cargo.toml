@@ -1,6 +1,6 @@
 [package]
 name = "spkprac"
-version = "1.0.0"
+version = "0.1.1"
 edition = "2021"
 description = "SpkPrac - realtime voice chat & speaking practice for Windows"
 

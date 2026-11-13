@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Info
@@ -25,11 +27,16 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHost
@@ -56,6 +63,7 @@ import com.spkprac.app.R
 import com.spkprac.app.data.AppSettings
 import com.spkprac.app.data.AudioRoute
 import com.spkprac.app.data.CaptionSize
+import com.spkprac.app.data.ClonedVoice
 import com.spkprac.app.data.Languages
 import com.spkprac.app.data.ProtocolFlavor
 import com.spkprac.app.data.SessionRepo
@@ -106,11 +114,17 @@ private fun rememberDraft(stored: String): Draft {
     return draft
 }
 
+/** One voice-dropdown entry; [value] is what gets written into the voice setting. */
+private data class VoiceOption(val label: String, val value: String)
+
 /* ---------------------------------------------------------------- screen */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onManageVoices: () -> Unit
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repo = remember { SettingsRepository(context) }
@@ -208,7 +222,8 @@ fun SettingsScreen(onBack: () -> Unit) {
                         testing = false
                     }
                 },
-                repo = repo
+                repo = repo,
+                onManageVoices = onManageVoices
             )
 
             SectionCard(stringResource(R.string.set_sec_appearance), icon = Icons.Default.Palette) {
@@ -559,15 +574,27 @@ private fun ApiSection(
     testing: Boolean,
     testResult: TestResult?,
     onTest: () -> Unit,
-    repo: SettingsRepository
+    repo: SettingsRepository,
+    onManageVoices: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val voiceOptions = remember(settings.voice) {
-        if (settings.voice in AppSettings.VOICE_PRESETS) AppSettings.VOICE_PRESETS
-        else AppSettings.VOICE_PRESETS + settings.voice
-    }
     val voiceDraft = rememberDraft(settings.voice)
     val endpointDraft = rememberDraft(settings.rtEndpoint)
+
+    // Preset dropdown options (spec §5.1): system presets + this model's usable cloned voices.
+    val myVoices = remember(settings.clonedVoices, settings.rtModel) {
+        settings.clonedVoices
+            .filter { it.status == ClonedVoice.OK && it.targetModel == settings.rtModel }
+            .sortedBy { it.createdAt }
+            .map { VoiceOption(label = it.name.ifBlank { it.voiceId }, value = it.voiceId) }
+    }
+    val voiceSelection = settings.voice.ifBlank { "Tina" }
+    val selectedVoiceLabel = when {
+        voiceSelection in AppSettings.VOICE_PRESETS -> voiceSelection
+        else -> myVoices.firstOrNull { it.value == voiceSelection }?.label
+            ?: stringResource(R.string.voice_custom)
+    }
+    val showVoiceDropdown = settings.rtModel.trim() == AppSettings.DEFAULT_RT_MODEL
 
     SectionCard(stringResource(R.string.sec_api), icon = Icons.Default.Tune) {
         LabeledTextField(
@@ -622,17 +649,19 @@ private fun ApiSection(
                 scope.launch { repo.setRtModel(it) }
             }
         )
-        DropdownField(
-            label = stringResource(R.string.voice),
-            options = voiceOptions,
-            selected = settings.voice,
-            optionLabel = { it },
-            onSelect = {
-                voiceDraft.value = it
-                voiceDraft.touched = true
-                scope.launch { repo.setVoice(it) }
-            }
-        )
+        if (showVoiceDropdown) {
+            VoiceDropdownField(
+                label = stringResource(R.string.voice),
+                systemVoices = AppSettings.VOICE_PRESETS,
+                myVoices = myVoices,
+                selectedLabel = selectedVoiceLabel,
+                onSelect = { value ->
+                    voiceDraft.value = value
+                    voiceDraft.touched = true
+                    scope.launch { repo.setVoice(value) }
+                }
+            )
+        }
         LabeledTextField(
             label = stringResource(R.string.set_voice_custom),
             value = voiceDraft.value,
@@ -642,6 +671,29 @@ private fun ApiSection(
                 scope.launch { repo.setVoice(it) }
             },
             supportingText = stringResource(R.string.voice_hint)
+        )
+        OutlinedButton(
+            onClick = onManageVoices,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(
+                Icons.Default.RecordVoiceOver,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.voice_manage))
+        }
+        val cloneEndpointDraft = rememberDraft(settings.cloneEndpoint)
+        LabeledTextField(
+            label = stringResource(R.string.voice_clone_endpoint),
+            value = cloneEndpointDraft.value,
+            onValueChange = {
+                cloneEndpointDraft.value = it
+                cloneEndpointDraft.touched = true
+                scope.launch { repo.setCloneEndpoint(it) }
+            },
+            supportingText = stringResource(R.string.voice_clone_endpoint_hint)
         )
         val textEndpointDraft = rememberDraft(settings.textEndpoint)
         LabeledTextField(
@@ -692,6 +744,79 @@ private fun ApiSection(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VoiceDropdownField(
+    label: String,
+    systemVoices: List<String>,
+    myVoices: List<VoiceOption>,
+    selectedLabel: String,
+    onSelect: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selectedLabel,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            shape = MaterialTheme.shapes.medium,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 420.dp)
+        ) {
+            DropdownMenuItem(
+                text = { DropdownGroupHeader(stringResource(R.string.voice_group_system)) },
+                onClick = {},
+                enabled = false
+            )
+            systemVoices.forEach { preset ->
+                DropdownMenuItem(
+                    text = { Text(preset) },
+                    onClick = {
+                        onSelect(preset)
+                        expanded = false
+                    }
+                )
+            }
+            if (myVoices.isNotEmpty()) {
+                DropdownMenuItem(
+                    text = { DropdownGroupHeader(stringResource(R.string.voice_group_mine)) },
+                    onClick = {},
+                    enabled = false
+                )
+                myVoices.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.label) },
+                        onClick = {
+                            onSelect(option.value)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DropdownGroupHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary
+    )
 }
 
 @Composable

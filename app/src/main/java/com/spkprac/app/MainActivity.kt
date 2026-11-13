@@ -40,6 +40,8 @@ import com.spkprac.app.ui.screens.PracticeSetupScreen
 import com.spkprac.app.ui.screens.SessionDetailScreen
 import com.spkprac.app.ui.screens.SessionScreen
 import com.spkprac.app.ui.screens.SettingsScreen
+import com.spkprac.app.ui.screens.VoiceDetailScreen
+import com.spkprac.app.ui.screens.VoiceManagerScreen
 import com.spkprac.app.ui.theme.SpkPracTheme
 import com.spkprac.app.ui.theme.UiPrefs
 import kotlinx.coroutines.flow.first
@@ -48,6 +50,10 @@ sealed class Screen {
     data object Home : Screen()
     data object Settings : Screen()
     data object PracticeSetup : Screen()
+    /** Voice manager, opened from Settings → 音色 → 管理音色. */
+    data object VoiceManager : Screen()
+    /** One cloned voice's detail page, keyed by server voice id. */
+    data class VoiceDetail(val voiceId: String) : Screen()
     data class Session(val cfg: SessionStartConfig) : Screen()
     data class SessionDetail(val id: String) : Screen()
 }
@@ -116,7 +122,12 @@ fun AppRoot() {
         var screen by remember { mutableStateOf<Screen>(Screen.Home) }
 
         BackHandler(enabled = screen !is Screen.Home) {
-            screen = Screen.Home
+            // Nested pages pop one level instead of jumping straight home.
+            screen = when (screen) {
+                is Screen.VoiceDetail -> Screen.VoiceManager
+                is Screen.VoiceManager -> Screen.Settings
+                else -> Screen.Home
+            }
         }
 
         val go: (Screen) -> Unit = { screen = it }
@@ -201,6 +212,19 @@ private fun ScreenHost(
             onBack = onBackHome
         )
 
-        is Screen.Settings -> SettingsScreen(onBack = onBackHome)
+        is Screen.Settings -> SettingsScreen(
+            onBack = onBackHome,
+            onManageVoices = { go(Screen.VoiceManager) }
+        )
+
+        is Screen.VoiceManager -> VoiceManagerScreen(
+            onBack = { go(Screen.Settings) },
+            onOpenVoice = { go(Screen.VoiceDetail(it)) }
+        )
+
+        is Screen.VoiceDetail -> VoiceDetailScreen(
+            voiceId = screen.voiceId,
+            onBack = { go(Screen.VoiceManager) }
+        )
     }
 }

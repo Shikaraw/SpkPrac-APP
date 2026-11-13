@@ -53,6 +53,14 @@ Android 版 [SpkPrac](../README.md) 的 Windows 桌面移植版：全双工实�
 - Aurora 流光背景、Canvas 语音球（聆听随电平脉动 / 思考虚线旋转 / 说话环形波纹 / 失败静止）
 - 气泡进场动画、思考三点、渐变压感卡片、页面转场
 
+### 音色与声音复刻
+
+- 实时模型为 `qwen3.8-omni-flash-realtime` 时，音色提供官方 33 个系统音色下拉 + 自由输入
+- 声音复刻：上传 WAV/MP3/M4A 录音（<10 MB、≥24 kHz、5–60 秒）创建专属音色
+- 音色管理页（状态徽标 / 刷新 / 删除）与详情页（voice_id 可复制、重命名、刷新）
+- 删除后下拉同步消失，删除当前音色回落 `Tina`
+- 「复刻接口地址」可配置，默认指向北京地域百炼声音复刻端点
+
 ### 音频设备（桌面版增强）
 - **麦克风与扬声器都能单独选**（`getUserMedia` deviceId + `AudioContext.setSinkId`）
 - 设备列表异步枚举，插拔后可在会话中切换
@@ -85,7 +93,7 @@ cargo build --release
 
 | 项 | 大小 |
 |---|---|
-| 最终 exe | **3.97 MB** |
+| 最终 exe | **4.06 MB** |
 | 其中 Tauri + wry + WebView2 绑定 | 约 2.6 MB |
 | 网络栈（tokio + tungstenite + native-tls/Schannel） | 约 0.7 MB |
 | 应用逻辑 + 内嵌前端 | 约 0.6 MB |
@@ -138,8 +146,8 @@ PC/
 PC 版 Release 用独立标签，避免与 Android 混淆：
 
 ```bash
-git tag pc-v1.0.0
-git push origin pc-v1.0.0
+git tag pc-v0.1.1
+git push origin pc-v0.1.1
 ```
 
 把 `SpkPrac.exe` 作为资产上传到该 Release，应用即可自动检测到。

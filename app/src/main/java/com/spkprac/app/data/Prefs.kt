@@ -10,8 +10,13 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
+
+/** Encodes the cloned-voice cache into a single DataStore string (spec §4). */
+private val voiceJson = Json { ignoreUnknownKeys = true }
 
 enum class VadMode { AUTO, PTT }
 enum class ProtocolFlavor { QWEN, OPENAI }
@@ -36,6 +41,10 @@ data class AppSettings(
     val textEndpoint: String = DEFAULT_TEXT_ENDPOINT,
     val textModel: String = DEFAULT_TEXT_MODEL,
     val voice: String = "Tina",
+    /** Voice-enrollment HTTP endpoint (spec §2.1); configurable for other workspaces/regions. */
+    val cloneEndpoint: String = DEFAULT_CLONE_ENDPOINT,
+    /** Locally cached cloned voices: list_voice never returns target_model (spec §4). */
+    val clonedVoices: List<ClonedVoice> = emptyList(),
     val vadMode: VadMode = VadMode.AUTO,
     val vadThreshold: Float = 0.5f,
     val silenceMs: Int = 600,
@@ -76,13 +85,25 @@ data class AppSettings(
         const val DEFAULT_TEXT_ENDPOINT =
             "https://maas.qianwenaiapi.com/compatible-mode/v1/chat/completions"
         const val DEFAULT_TEXT_MODEL = "qwen3.8-flash"
+        /** Voice-enrollment endpoint; identical on Android and PC (spec §2.1). */
+        const val DEFAULT_CLONE_ENDPOINT =
+            "https://cn-beijing.maas.qianwenaiapi.com/api/v1/services/audio/tts/customization"
         const val DEFAULT_CHAT_PROMPT =
             "You are a friendly, knowledgeable voice assistant. Keep answers concise and natural " +
                 "for speech (usually 1-3 short paragraphs unless asked for more). Avoid markdown " +
                 "formatting since everything you say is spoken aloud."
 
-        /** Voices commonly offered by the Qwen realtime endpoint; free text is still allowed. */
-        val VOICE_PRESETS = listOf("Tina", "Ethan", "Cherry", "Serena", "Dylan", "Jada")
+        /**
+         * Single source of truth for the preset dropdown (spec §5.1): the official Qwen3.8-Omni
+         * voice list, in the exact order given by the contract. `Tina` is the default.
+         * Free text is still allowed and never validated against this list.
+         */
+        val VOICE_PRESETS = listOf(
+            "Tina", "Cindy", "Liora Mira", "Raymond", "Zane", "Katerina", "Ryan", "Mia", "Cici",
+            "Theo Calm", "Serena", "Maia", "Evan", "Qiao", "Momo", "Wil", "Angel", "Li Cassian",
+            "Joyner", "Gold", "Jennifer", "Aiden", "Mione", "Sunny", "Dylan", "Eric", "Peter",
+            "Joseph Chen", "Marcus", "Li", "Rocky", "Kiki", "Sohee"
+        )
     }
 }
 
@@ -96,6 +117,8 @@ class SettingsRepository(private val context: Context) {
         val textEndpoint = stringPreferencesKey("text_endpoint")
         val textModel = stringPreferencesKey("text_model")
         val voice = stringPreferencesKey("voice")
+        val cloneEndpoint = stringPreferencesKey("clone_endpoint")
+        val clonedVoices = stringPreferencesKey("cloned_voices")
         val vadMode = stringPreferencesKey("vad_mode")
         val vadThreshold = floatPreferencesKey("vad_threshold")
         val silenceMs = intPreferencesKey("silence_ms")
@@ -135,6 +158,8 @@ class SettingsRepository(private val context: Context) {
             textEndpoint = p[K.textEndpoint] ?: AppSettings.DEFAULT_TEXT_ENDPOINT,
             textModel = p[K.textModel] ?: AppSettings.DEFAULT_TEXT_MODEL,
             voice = p[K.voice] ?: "Tina",
+            cloneEndpoint = p[K.cloneEndpoint] ?: AppSettings.DEFAULT_CLONE_ENDPOINT,
+            clonedVoices = decodeVoices(p[K.clonedVoices]),
             vadMode = enumOr(p[K.vadMode], VadMode.AUTO),
             vadThreshold = p[K.vadThreshold] ?: 0.5f,
             silenceMs = p[K.silenceMs] ?: 600,
@@ -170,6 +195,19 @@ class SettingsRepository(private val context: Context) {
         if (raw == null) fallback
         else runCatching { enumValueOf<T>(raw) }.getOrDefault(fallback)
 
+    /** Corrupt or future-version cache content must never crash the app; treat it as empty. */
+    private fun decodeVoices(raw: String?): List<ClonedVoice> {
+        if (raw.isNullOrBlank()) return emptyList()
+        return runCatching {
+            voiceJson.decodeFromString(ListSerializer(ClonedVoice.serializer()), raw)
+        }.getOrDefault(emptyList())
+    }
+
+    private fun encodeVoices(voices: List<ClonedVoice>): String =
+        runCatching {
+            voiceJson.encodeToString(ListSerializer(ClonedVoice.serializer()), voices)
+        }.getOrDefault("[]")
+
     suspend fun setApiKey(v: String) = set(K.apiKey, v)
     suspend fun setRtEndpoint(v: String) = set(K.rtEndpoint, v)
     suspend fun setRtModel(v: String) = set(K.rtModel, v)
@@ -177,6 +215,8 @@ class SettingsRepository(private val context: Context) {
     suspend fun setTextEndpoint(v: String) = set(K.textEndpoint, v)
     suspend fun setTextModel(v: String) = set(K.textModel, v)
     suspend fun setVoice(v: String) = set(K.voice, v)
+    suspend fun setCloneEndpoint(v: String) = set(K.cloneEndpoint, v)
+    suspend fun setClonedVoices(v: List<ClonedVoice>) = set(K.clonedVoices, encodeVoices(v))
     suspend fun setVadMode(v: VadMode) = set(K.vadMode, v.name)
     suspend fun setVadThreshold(v: Float) = set(K.vadThreshold, v)
     suspend fun setSilenceMs(v: Int) = set(K.silenceMs, v)

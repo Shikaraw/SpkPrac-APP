@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-animations="on">
+  <head>
+    <meta charset="utf-8" />
+    <base href="../ui/" />
+    <meta name="color-scheme" content="dark light" />
+    <title>SpkPrac — voices preview</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/screens.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" id="brand-mark"></div>
+          <div class="brand-text">
+            <div class="brand-name">SpkPrac</div>
+            <div class="brand-sub">Voice · Practice</div>
+          </div>
+        </div>
+        <nav class="nav" id="nav"></nav>
+        <div class="sidebar-foot">
+          <div class="foot-line">
+            <span class="foot-text" id="foot-theme-label"></span>
+            <button class="btn btn-icon btn-sm" id="theme-toggle"></button>
+          </div>
+          <div class="foot-line"><span class="foot-text faint" id="foot-version"></span></div>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="page-header" id="page-header"></header>
+        <div class="page-body" id="page-body"></div>
+      </main>
+    </div>
+    <div id="session-root"></div>
+    <div id="dialog-root"></div>
+    <div class="toasts" id="toasts"></div>
+
+    <script>
+      /* Preview only — never bundled. Seeds the browser mock backend so the voice screens can be
+         screenshotted without a real API key. URL hash selects the route:
+         voices.html#/settings  voices.html#/voices  voices.html#/voice/<id> */
+      (function () {
+        var now = Date.now();
+        var MODEL = "qwen3.8-omni-flash-realtime";
+        var okId = MODEL + "-myvoice-a1b2c3";
+        var deployingId = MODEL + "-narration-d4e5f6";
+        var rejectedId = MODEL + "-testsample-g7h8i9";
+        localStorage.setItem(
+          "spkprac.settings",
+          JSON.stringify({
+            apiKey: "sk-preview",
+            rtEndpoint: "wss://cn-beijing.maas.qianwenaiapi.com/api-ws/v1/realtime",
+            rtModel: MODEL,
+            flavor: "QWEN",
+            textEndpoint:
+              "https://maas.qianwenaiapi.com/compatible-mode/v1/chat/completions",
+            textModel: "qwen3.8-flash",
+            voice: "Serena",
+            cloneEndpoint:
+              "https://cn-beijing.maas.qianwenaiapi.com/api/v1/services/audio/tts/customization",
+            clonedVoices: [
+              {
+                voiceId: okId,
+                name: "我的专属音色",
+                targetModel: MODEL,
+                status: "OK",
+                createdAt: now - 172800000,
+                updatedAt: now - 3600000,
+                audioName: "studio-sample.wav",
+              },
+              {
+                voiceId: deployingId,
+                name: "Narration voice",
+                targetModel: MODEL,
+                status: "DEPLOYING",
+                createdAt: now - 7200000,
+                updatedAt: now - 600000,
+                audioName: "narration.m4a",
+              },
+              {
+                voiceId: rejectedId,
+                name: "Noisy sample",
+                targetModel: MODEL,
+                status: "UNDEPLOYED",
+                createdAt: now - 604800000,
+                updatedAt: now - 86400000,
+                audioName: "noisy.wav",
+              },
+              {
+                voiceId: "qwen-audio-3.1-tts-plus-legacy-x1y2z3",
+                name: "Legacy voice",
+                targetModel: "",
+                status: "OK",
+                createdAt: now - 259200000,
+                updatedAt: now - 172800000,
+                audioName: null,
+              },
+            ],
+            vadMode: "AUTO",
+            vadThreshold: 0.5,
+            silenceMs: 600,
+            subtitleAi: true,
+            subtitleUser: true,
+            translateEnabled: false,
+            translateLang: "zh",
+            asrLang: "",
+            inputDeviceId: "",
+            outputDeviceId: "",
+            chatPrompt: "",
+            chatSpeakLang: "auto",
+            pracLang: "en",
+            pracLevel: "B1-B2",
+            pracTopic: "",
+            pracCorrection: "SOMETIMES",
+            pracReport: true,
+            themeMode: "DARK",
+            captionSize: "MEDIUM",
+            language: "zh",
+            animations: true,
+            showWaveform: true,
+            micGain: 1.0,
+            autoReconnect: true,
+            bargeIn: true,
+            autoCheckUpdate: true,
+            updateProxy: true,
+            lastUpdateCheckAt: 0,
+          })
+        );
+      })();
+    </script>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/voice.js"></script>
+    <script src="js/markdown.js"></script>
+    <script src="js/orb.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/rt.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/screens/home.js"></script>
+    <script src="js/screens/practice.js"></script>
+    <script src="js/screens/session.js"></script>
+    <script src="js/screens/detail.js"></script>
+    <script src="js/screens/settings.js"></script>
+    <script src="js/screens/voices.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+      /* Preview only: for the settings screenshot keep just the endpoint block and the
+         conversation block (which now hosts the voice row) so both fit one viewport. */
+      window.addEventListener("load", function () {
+        if (location.hash.indexOf("#/settings") !== 0) return;
+        setTimeout(function () {
+          var cards = document.querySelectorAll(".settings-grid > section.card");
+          [2, 3, 5, 6, 7].forEach(function (index) {
+            if (cards[index]) cards[index].style.display = "none";
+          });
+        }, 500);
+      });
+    </script>
+  </body>
+</html>

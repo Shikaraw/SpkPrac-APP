@@ -67,6 +67,58 @@
       .join("");
   }
 
+  // The preset dropdown only exists for this model (spec §5.1).
+  const REALTIME_MODEL = "qwen3.8-omni-flash-realtime";
+
+  /** Preset dropdown content: system presets + this model's approved cloned voices. */
+  function voiceSelectOptions(current, mine) {
+    const presets = SP.voice.presets().map((v) => [v, v]);
+    const known =
+      presets.some((pair) => pair[0] === current) ||
+      mine.some((pair) => pair[0] === current);
+    const systemGroup = `<optgroup label="${esc(t("voice.group_system"))}">${options(
+      presets,
+      current
+    )}</optgroup>`;
+    const mineGroup = mine.length
+      ? `<optgroup label="${esc(t("voice.group_mine"))}">${options(mine, current)}</optgroup>`
+      : "";
+    const custom = `<option value="__custom__" ${known ? "" : "selected"}>${esc(
+      t("voice.custom")
+    )}</option>`;
+    return systemGroup + mineGroup + custom;
+  }
+
+  /** Spec §5.1: preset dropdown (only for the realtime model) + free input + manage button. */
+  function voiceBlock(s) {
+    const isRealtime = s.rtModel === REALTIME_MODEL;
+    const current = String(s.voice || "").trim() || "Tina";
+    let select = "";
+    if (isRealtime) {
+      const mine = SP.voice
+        .usableVoices(REALTIME_MODEL)
+        .map((v) => [v.voiceId, v.name || v.voiceId]);
+      select = `<select class="select" id="sel-voice">${voiceSelectOptions(
+        current,
+        mine
+      )}</select>`;
+    }
+    return `<div class="stack" style="gap:8px">
+      ${select}
+      <div class="row" style="gap:8px">
+        <input class="input grow" id="in-voice" value="${esc(current)}" placeholder="Tina" />
+        <button class="btn btn-sm" id="btn-manage-voice">${icon("mic", 14)}<span>${esc(
+      t("voice.manage")
+    )}</span></button>
+      </div>
+      ${
+        isRealtime
+          ? ""
+          : `<div class="setting-sub">${esc(t("voice.only_omni_hint"))}</div>`
+      }
+    </div>`;
+  }
+
   function bindSwitch(root, id, get, set) {
     const sw = root.querySelector("#" + id);
     const rowEl = root.querySelector("#" + id + "-row");
@@ -98,7 +150,6 @@
   async function render() {
     const s = SP.store.settings;
     const info = SP.store.info;
-    const voices = SP.store.voices;
 
     // Devices are filled in after the first paint: enumerateDevices can be slow (or never settle
     // before a stream exists) and must never block the whole screen.
@@ -173,6 +224,13 @@
             "set.text_model",
             null,
             `<input class="input" id="in-text-model" value="${esc(s.textModel || "")}" />`
+          ) +
+          rowWide(
+            "set.clone_endpoint",
+            "set.clone_endpoint_desc",
+            `<input class="input" id="in-clone-ep" value="${esc(
+              s.cloneEndpoint || ""
+            )}" placeholder="https://…/api/v1/services/audio/tts/customization" />`
           )
       )}
 
@@ -270,19 +328,12 @@
               ${options(speakOpts, s.chatSpeakLang || "auto")}
             </select>`
           ) +
-          rowWide(
-            "set.voice",
-            null,
-            `<div class="stack" style="gap:6px">
-              <select class="select" id="sel-voice">
-                ${options(
-                  voices.map((v) => [v, v]).concat([["__custom__", t("set.voice_custom")]]),
-                  voices.includes(s.voice) ? s.voice : "__custom__"
-                )}
-              </select>
-              <input class="input" id="in-voice" value="${esc(s.voice || "")}" placeholder="Tina" />
-            </div>`
-          ) +
+          `<div class="setting-row" style="flex-direction:column;align-items:stretch;gap:8px">
+            <div class="setting-main">
+              <div class="setting-title">${esc(t("set.voice"))}</div>
+            </div>
+            ${voiceBlock(s)}
+          </div>` +
           `<div class="setting-row" style="flex-direction:column;align-items:stretch;gap:8px">
             <div class="setting-main">
               <div class="setting-title">${esc(t("set.chat_prompt"))}</div>
@@ -465,6 +516,19 @@
     bindInput("in-rt-model", "rtModel");
     bindInput("in-text-ep", "textEndpoint");
     bindInput("in-text-model", "textModel");
+    bindInput("in-clone-ep", "cloneEndpoint");
+
+    // The preset dropdown only exists for the realtime model: re-render when that flips.
+    const rtModelInput = content.querySelector("#in-rt-model");
+    rtModelInput.addEventListener("change", () => {
+      const value = rtModelInput.value.trim();
+      const wasRealtime = SP.store.settings.rtModel === REALTIME_MODEL;
+      const isRealtime = value === REALTIME_MODEL;
+      save({ rtModel: value });
+      if (wasRealtime !== isRealtime) {
+        setTimeout(() => SP.app.navigate("settings"), 80);
+      }
+    });
 
     bindSegmented(content, "seg-flavor", (v) => save({ flavor: v }));
     bindSegmented(content, "seg-theme", (v) => save({ themeMode: v }));
@@ -581,18 +645,51 @@
 
     const voiceSel = content.querySelector("#sel-voice");
     const voiceInput = content.querySelector("#in-voice");
-    voiceSel.addEventListener("change", () => {
-      if (voiceSel.value === "__custom__") {
-        voiceInput.focus();
-        return;
+    const manageBtn = content.querySelector("#btn-manage-voice");
+    const knownVoice = (value) =>
+      !!voiceSel &&
+      Array.from(voiceSel.options).some(
+        (o) => o.value === value && o.value !== "__custom__"
+      );
+    const syncVoiceSelect = () => {
+      if (voiceSel) {
+        voiceSel.value = knownVoice(voiceInput.value)
+          ? voiceInput.value
+          : "__custom__";
       }
-      voiceInput.value = voiceSel.value;
-      save({ voice: voiceSel.value });
-    });
+    };
+    if (manageBtn) {
+      manageBtn.addEventListener("click", () => SP.app.navigate("voices"));
+    }
+    if (voiceSel) {
+      voiceSel.addEventListener("change", () => {
+        const value = voiceSel.value;
+        if (value === "__custom__") {
+          // «自定义» never clears the input — it only lets the user type.
+          voiceInput.focus();
+          return;
+        }
+        voiceInput.value = value;
+        save({ voice: value });
+      });
+    }
+    voiceInput.addEventListener("input", syncVoiceSelect);
     voiceInput.addEventListener(
       "input",
       debouncedSave(() => ({ voice: voiceInput.value.trim() }))
     );
+    voiceInput.addEventListener("change", () => {
+      const value = voiceInput.value.trim();
+      if (!value) {
+        // Spec §5.1: an empty selection falls back to the default preset.
+        voiceInput.value = "Tina";
+        if (voiceSel) voiceSel.value = "Tina";
+        save({ voice: "Tina" });
+        return;
+      }
+      syncVoiceSelect();
+      save({ voice: value });
+    });
 
     const promptInput = content.querySelector("#in-prompt");
     promptInput.addEventListener(

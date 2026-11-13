@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- voice presets + sound cloning (docs/voice-clone-spec.md §6) -->
+
+    <!-- settings voice block -->
+    <string name="voice_manage">管理音色</string>
+    <string name="voice_custom">自定义</string>
+    <string name="voice_group_system">系统音色</string>
+    <string name="voice_group_mine">我的音色</string>
+    <string name="voice_clone_endpoint">声音复刻接口地址 (HTTPS)</string>
+    <string name="voice_clone_endpoint_hint">默认使用阿里云百炼北京地域，换 workspace 或地域时在此修改</string>
+
+    <!-- voice manager -->
+    <string name="voice_title">我的音色</string>
+    <string name="voice_add">添加音色</string>
+    <string name="voice_refresh">刷新</string>
+    <string name="voice_empty">还没有复刻音色</string>
+    <string name="voice_empty_desc">上传一段 10–20 秒的清晰录音，就能克隆出一个专属音色。</string>
+    <string name="voice_name">音色名称</string>
+    <string name="voice_name_hint">给这个音色起个名字</string>
+    <string name="voice_pick_audio">选择音频文件</string>
+    <string name="voice_pick_change">重新选择</string>
+    <string name="voice_audio_tip">支持 WAV / MP3 / M4A，5–60 秒，不超过 10 MB</string>
+    <string name="voice_audio_content_tip">音频需包含至少 3 秒连续清晰朗读，无背景音乐与噪声</string>
+    <string name="voice_create">创建音色</string>
+    <string name="voice_creating">正在创建…</string>
+    <string name="voice_uploading">正在上传音频…</string>
+    <string name="voice_file_reading">正在读取音频…</string>
+    <string name="voice_deploying">审核中</string>
+    <string name="voice_ok">可用</string>
+    <string name="voice_undeployed">审核未通过</string>
+    <string name="voice_unknown_model">未知模型</string>
+    <string name="voice_unknown">未知</string>
+    <string name="voice_set_current">当前使用</string>
+    <string name="voice_current_set">已设为当前音色</string>
+    <string name="voice_use_title">设为当前音色？</string>
+    <string name="voice_use_message">「%1$s」已创建成功，是否立即使用？</string>
+    <string name="voice_use_confirm">立即使用</string>
+    <string name="voice_warn_still_deploying">音色仍在审核中，稍后可在管理页刷新状态</string>
+
+    <!-- add flow validation -->
+    <string name="voice_audio_selected">已选择：%1$s · %2$d 秒 · %3$s MB</string>
+    <string name="voice_audio_selected_unknown">已选择：%1$s · %2$s MB（无法读取时长）</string>
+    <string name="voice_err_name_empty">请填写音色名称</string>
+    <string name="voice_err_format">不支持的音频格式，请使用 WAV / MP3 / M4A</string>
+    <string name="voice_err_size">音频文件超过 10 MB</string>
+    <string name="voice_err_too_short">音频太短，至少需要 5 秒</string>
+    <string name="voice_err_too_long">音频太长，最长 60 秒</string>
+    <string name="voice_err_sample_rate">采样率不足 24 kHz（当前 %1$d Hz），请换更高音质的录音</string>
+    <string name="voice_warn_channels">双声道音频将只使用第一声道，建议先转成单声道</string>
+    <string name="voice_err_read">无法读取所选文件，请重新选择</string>
+    <string name="voice_warn_duration">建议使用 10–20 秒的音频，效果更好</string>
+    <string name="voice_err_no_key">请先在设置中填入 API Key</string>
+    <string name="voice_create_failed">创建失败：%1$s</string>
+    <string name="voice_err_request">请求失败：%1$s</string>
+
+    <!-- voice detail -->
+    <string name="voice_detail">音色详情</string>
+    <string name="voice_voice_id">音色 ID</string>
+    <string name="voice_target_model">绑定模型</string>
+    <string name="voice_created_at">创建时间</string>
+    <string name="voice_synced_at">最后同步</string>
+    <string name="voice_source_file">原始文件</string>
+    <string name="voice_copy_id">复制 ID</string>
+    <string name="voice_copied">已复制</string>
+    <string name="voice_rename">重命名</string>
+    <string name="voice_rename_title">重命名音色</string>
+    <string name="voice_save">保存</string>
+    <string name="voice_delete">删除音色</string>
+    <string name="voice_delete_confirm">确定删除「%1$s」吗？删除后不可恢复，且该音色会从列表中消失。</string>
+    <string name="voice_delete_done">音色已删除</string>
+    <string name="voice_delete_failed">删除失败：%1$s</string>
+    <string name="voice_not_found">音色不存在，可能已被删除</string>
+    <string name="voice_status_hint_deploying">审核中，请稍候，通常需要几分钟</string>
+    <string name="voice_status_hint_ok">审核通过，可以在音色列表中选择使用</string>
+    <string name="voice_status_hint_undeployed">审核未通过，请换一段更清晰的音频重新创建</string>
+    <string name="voice_status_refreshed">状态已刷新</string>
+    <string name="voice_refresh_failed">刷新失败：%1$s</string>
+    <string name="voice_created">音色创建成功</string>
+</resources>

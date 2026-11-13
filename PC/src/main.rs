@@ -4,6 +4,7 @@ mod net;
 mod realtime;
 mod sessions;
 mod settings;
+mod voice;
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
@@ -229,6 +230,11 @@ fn main() {
             settings_get,
             settings_save,
             settings_voices,
+            voice::voice_list,
+            voice::voice_create,
+            voice::voice_query,
+            voice::voice_update,
+            voice::voice_delete,
             sessions_list,
             sessions_load,
             sessions_save,

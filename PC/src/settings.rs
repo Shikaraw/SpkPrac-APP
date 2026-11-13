@@ -6,7 +6,43 @@ pub const DEFAULT_RT_ENDPOINT: &str = "wss://cn-beijing.maas.qianwenaiapi.com/ap
 pub const DEFAULT_RT_MODEL: &str = "qwen3.8-omni-flash-realtime";
 pub const DEFAULT_TEXT_ENDPOINT: &str = "https://maas.qianwenaiapi.com/compatible-mode/v1/chat/completions";
 pub const DEFAULT_TEXT_MODEL: &str = "qwen3.8-flash";
+pub const DEFAULT_CLONE_ENDPOINT: &str =
+    "https://cn-beijing.maas.qianwenaiapi.com/api/v1/services/audio/tts/customization";
 pub const DEFAULT_CHAT_PROMPT: &str = "You are a friendly, knowledgeable voice assistant. Keep answers concise and natural for speech (usually 1-3 short paragraphs unless asked for more). Avoid markdown formatting since everything you say is spoken aloud.";
+
+/// A voice cloned through the `voice-enrollment` API and cached locally (spec §4).
+///
+/// `voice_id` is the server primary key; `name` is purely local. `target_model` stays empty when the
+/// server has not told us which model the voice is bound to (`list_voice` omits it).
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ClonedVoice {
+    pub voice_id: String,
+    pub name: String,
+    pub target_model: String,
+    /// `DEPLOYING` | `OK` | `UNDEPLOYED`
+    pub status: String,
+    /// epoch ms
+    pub created_at: i64,
+    /// epoch ms of the last successful local↔server sync
+    pub updated_at: i64,
+    /// Original file name, display only.
+    pub audio_name: Option<String>,
+}
+
+impl Default for ClonedVoice {
+    fn default() -> Self {
+        Self {
+            voice_id: String::new(),
+            name: String::new(),
+            target_model: String::new(),
+            status: "DEPLOYING".into(),
+            created_at: 0,
+            updated_at: 0,
+            audio_name: None,
+        }
+    }
+}
 
 /// Every user-tunable option. Mirrors the Android `AppSettings` one-for-one, with the audio route
 /// replaced by concrete Windows device ids.
@@ -21,6 +57,10 @@ pub struct Settings {
     pub text_endpoint: String,
     pub text_model: String,
     pub voice: String,
+    /// Voice-cloning (`voice-enrollment`) endpoint, see spec §2.1.
+    pub clone_endpoint: String,
+    /// Locally cached cloned voices, see spec §4.
+    pub cloned_voices: Vec<ClonedVoice>,
     /// "AUTO" | "PTT"
     pub vad_mode: String,
     pub vad_threshold: f32,
@@ -68,6 +108,8 @@ impl Default for Settings {
             text_endpoint: DEFAULT_TEXT_ENDPOINT.into(),
             text_model: DEFAULT_TEXT_MODEL.into(),
             voice: "Tina".into(),
+            clone_endpoint: DEFAULT_CLONE_ENDPOINT.into(),
+            cloned_voices: Vec::new(),
             vad_mode: "AUTO".into(),
             vad_threshold: 0.5,
             silence_ms: 600,
@@ -100,7 +142,43 @@ impl Default for Settings {
     }
 }
 
-pub const VOICE_PRESETS: [&str; 6] = ["Tina", "Ethan", "Cherry", "Serena", "Dylan", "Jada"];
+/// Spec §5.1: Qwen3.8-Omni 系列官方有效系统音色，顺序即契约顺序（`Tina` 为默认）。
+/// Single source of truth for the Windows build: the frontend mock reuses the same order.
+pub const VOICE_PRESETS: [&str; 33] = [
+    "Tina",
+    "Cindy",
+    "Liora Mira",
+    "Raymond",
+    "Zane",
+    "Katerina",
+    "Ryan",
+    "Mia",
+    "Cici",
+    "Theo Calm",
+    "Serena",
+    "Maia",
+    "Evan",
+    "Qiao",
+    "Momo",
+    "Wil",
+    "Angel",
+    "Li Cassian",
+    "Joyner",
+    "Gold",
+    "Jennifer",
+    "Aiden",
+    "Mione",
+    "Sunny",
+    "Dylan",
+    "Eric",
+    "Peter",
+    "Joseph Chen",
+    "Marcus",
+    "Li",
+    "Rocky",
+    "Kiki",
+    "Sohee",
+];
 
 fn path(app: &tauri::AppHandle) -> PathBuf {
     use tauri::Manager;
