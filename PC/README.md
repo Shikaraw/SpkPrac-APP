@@ -146,8 +146,8 @@ PC/
 PC 版 Release 用独立标签，避免与 Android 混淆：
 
 ```bash
-git tag pc-v0.1.1
-git push origin pc-v0.1.1
+git tag pc-v1.2.0
+git push origin pc-v1.2.0
 ```
 
 把 `SpkPrac.exe` 作为资产上传到该 Release，应用即可自动检测到。

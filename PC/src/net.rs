@@ -8,7 +8,7 @@ const API_DIRECT: &str = "https://api.github.com";
 const API_MIRROR: &str = "https://gh-proxy.com/https://api.github.com";
 const ASSET_MIRROR: &str = "https://gh-proxy.com/";
 
-const AGENT: &str = "SpkPrac/0.1.1";
+const AGENT: &str = "SpkPrac/1.2.0";
 
 /// Release tags that belong to the Windows build, e.g. `pc-v1.2.0`.
 pub const PC_TAG_PREFIX: &str = "pc-v";

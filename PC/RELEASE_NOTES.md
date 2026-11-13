@@ -1,14 +1,14 @@
-## SpkPrac v0.1.1
+## SpkPrac v1.2.0
 
 全双工实时语音对话 + AI 口语练习。本次为 **新功能版本**，Android 与 Windows 双端同步更新，
-版本号统一为 **0.1.1**（此前 Android 为 1.1.0、Windows 为 1.0.0）。
+版本号统一为 **1.2.0**（Android 上一版 1.1.0、Windows 上一版 1.0.0）。
 
 ### 下载
 
 | 平台 | 文件 |
 |---|---|
-| Windows | `SpkPrac-0.1.1.exe`（单文件，约 4 MB，双击即用） |
-| Android | `SpkPrac-0.1.1.apk` |
+| Windows | `SpkPrac-1.2.0.exe`（单文件，约 4 MB，双击即用） |
+| Android | `SpkPrac-1.2.0.apk` |
 
 > Windows 版未做代码签名，首次运行 SmartScreen 可能提示「未知发布者」，
 > 点「更多信息 → 仍要运行」即可。
@@ -69,5 +69,4 @@ Joseph Chen · Marcus · Li · Rocky · Kiki · Sohee
 - 声音复刻需要有效 API Key，创建音色本身免费，按目标模型调用计费
 - Windows 版未做代码签名
 - 需要允许应用访问麦克风
-- 版本号从 1.x 回落到 0.1.1：**已安装旧版本的用户不会收到自动更新提示**，
-  需要手动下载安装（新装用户不受影响）
+- 已安装 1.1.0（Android）/ 1.0.0（Windows）的用户可在应用内正常收到本次更新提示
