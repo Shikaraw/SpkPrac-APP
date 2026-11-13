@@ -1,0 +1,24 @@
+name: Cleanup releases
+
+# One-off maintenance: pushing a `cleanup-releases-*` tag deletes the listed
+# superseded releases together with their git tags.
+on:
+  push:
+    tags: ['cleanup-releases-*']
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete superseded releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -x
+          for t in v0.1.1 pc-v0.1.1; do
+            gh release delete "$t" --yes --cleanup-tag && echo "deleted $t" || echo "skip $t"
+          done
+          gh release list
