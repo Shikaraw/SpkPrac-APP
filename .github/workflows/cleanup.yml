@@ -18,7 +18,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -x
+          REPO="${{ github.repository }}"
           for t in v0.1.1 pc-v0.1.1; do
-            gh release delete "$t" --yes --cleanup-tag && echo "deleted $t" || echo "skip $t"
+            gh release delete "$t" -R "$REPO" --yes --cleanup-tag && echo "deleted $t" || echo "skip $t"
           done
-          gh release list
+          gh release list -R "$REPO"
