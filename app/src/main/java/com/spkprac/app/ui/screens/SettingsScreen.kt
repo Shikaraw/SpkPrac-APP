@@ -56,6 +56,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.spkprac.app.BuildConfig
@@ -183,7 +188,13 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.settings), fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(R.string.settings),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.semantics { heading() }
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -466,7 +477,8 @@ fun SettingsScreen(
                     Text(
                         message,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                     )
                 }
                 SwitchRow(
@@ -610,7 +622,9 @@ private fun ApiSection(
                 IconButton(onClick = onToggleShowKey) {
                     Icon(
                         if (showKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = null
+                        contentDescription = stringResource(
+                            if (showKey) R.string.a11y_hide_key else R.string.a11y_show_key
+                        )
                     )
                 }
             },
@@ -738,7 +752,9 @@ private fun ApiSection(
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (result is TestResult.Ok) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.error,
+                        // Appears asynchronously after the probe: announce it (spec §4.4).
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                     )
                 }
             }
@@ -832,8 +848,9 @@ private fun SliderRow(
     var dragging by remember { mutableStateOf(false) }
     LaunchedEffect(stored) { if (!dragging) local = stored }
 
+    val stateText = labelFor(local)
     Column(Modifier.fillMaxWidth()) {
-        Text(labelFor(local), style = MaterialTheme.typography.bodyMedium)
+        Text(stateText, style = MaterialTheme.typography.bodyMedium)
         Slider(
             value = local,
             onValueChange = {
@@ -845,7 +862,12 @@ private fun SliderRow(
                 onCommit(local)
             },
             valueRange = range,
-            steps = steps
+            steps = steps,
+            // TalkBack reads the raw fraction otherwise; report the friendly formatted value
+            // ("VAD 灵敏度：0.50", "静音判定时长：600 ms") instead (spec §4.6).
+            modifier = Modifier.semantics {
+                stateDescription = stateText
+            }
         )
         if (supporting != null) {
             Text(

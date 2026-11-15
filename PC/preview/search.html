@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-animations="on">
+  <head>
+    <meta charset="utf-8" />
+    <base href="../ui/" />
+    <meta name="color-scheme" content="dark light" />
+    <title>SpkPrac — content search preview</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/screens.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" id="brand-mark"></div>
+          <div class="brand-text">
+            <div class="brand-name">SpkPrac</div>
+            <div class="brand-sub">Voice · Practice</div>
+          </div>
+        </div>
+        <nav class="nav" id="nav"></nav>
+        <div class="sidebar-foot">
+          <div class="foot-line">
+            <span class="foot-text" id="foot-theme-label"></span>
+            <button class="btn btn-icon btn-sm" id="theme-toggle"></button>
+          </div>
+          <div class="foot-line"><span class="foot-text faint" id="foot-version"></span></div>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="page-header" id="page-header"></header>
+        <div class="page-body" id="page-body"></div>
+      </main>
+    </div>
+    <div id="session-root"></div>
+    <div id="dialog-root"></div>
+    <div class="toasts" id="toasts"></div>
+
+    <script>
+      /* Preview only — never bundled. Seeds the browser mock backend, then types a query into the
+         home search so the content-hit snippet can be screenshotted at #/home. */
+      (function () {
+        var now = Date.now();
+        localStorage.setItem(
+          "spkprac.settings",
+          JSON.stringify({
+            apiKey: "sk-preview",
+            rtEndpoint: "wss://cn-beijing.maas.qianwenaiapi.com/api-ws/v1/realtime",
+            rtModel: "qwen3.8-omni-flash-realtime",
+            flavor: "QWEN",
+            textEndpoint:
+              "https://maas.qianwenaiapi.com/compatible-mode/v1/chat/completions",
+            textModel: "qwen3.8-flash",
+            voice: "Tina",
+            language: "zh",
+            themeMode: "DARK",
+            clonedVoices: [],
+          })
+        );
+        localStorage.setItem(
+          "spkprac.sessions",
+          JSON.stringify([
+            {
+              meta: {
+                id: "s1",
+                mode: "PRACTICE",
+                title: "English 点餐场景练习",
+                language: "en",
+                createdAt: now - 3600000 * 5,
+                durationMs: 412000,
+                messageCount: 8,
+              },
+              messages: [
+                { id: "m1", role: "USER", text: "I want to order a coffee and a croissant.", ts: now, kind: "normal" },
+                { id: "m2", role: "ASSISTANT", text: "Great choice! Would you like your coffee black or with milk?", ts: now + 8000, kind: "normal" },
+              ],
+              report: null,
+            },
+            {
+              meta: {
+                id: "s2",
+                mode: "CHAT",
+                title: "周末去哪儿玩",
+                language: "",
+                createdAt: now - 86400000,
+                durationMs: 725000,
+                messageCount: 5,
+              },
+              messages: [
+                { id: "m1", role: "USER", text: "Maybe we can grab a coffee near the office before the movie.", ts: now, kind: "normal" },
+                { id: "m2", role: "ASSISTANT", text: "Sounds good — there is a nice place two blocks away.", ts: now + 6000, kind: "normal" },
+              ],
+              report: null,
+            },
+            {
+              meta: {
+                id: "s3",
+                mode: "PRACTICE",
+                title: "Coffee shop role-play",
+                language: "en",
+                createdAt: now - 172800000,
+                durationMs: 300000,
+                messageCount: 6,
+              },
+              messages: [
+                { id: "m1", role: "USER", text: "Let's begin the role-play.", ts: now, kind: "normal" },
+                { id: "m2", role: "ASSISTANT", text: "Sure, I'm the barista. What can I get you?", ts: now + 5000, kind: "normal" },
+              ],
+              report: null,
+            },
+            {
+              meta: {
+                id: "s4",
+                mode: "CHAT",
+                title: "Team standup notes",
+                language: "",
+                createdAt: now - 259200000,
+                durationMs: 180000,
+                messageCount: 4,
+              },
+              messages: [
+                { id: "m1", role: "USER", text: "Yesterday I finished the login screen and wrote tests.", ts: now, kind: "normal" },
+                { id: "m2", role: "ASSISTANT", text: "Nice progress — what is next on your list?", ts: now + 4000, kind: "normal" },
+              ],
+              report: null,
+            },
+          ])
+        );
+        location.hash = "#/home";
+      })();
+
+      // Keep only the history section so the screenshot shows the hit snippets.
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          var input = document.getElementById("history-search");
+          if (!input) {
+            setTimeout(arguments.callee, 200);
+            return;
+          }
+          [".home-hero", ".stats", ".mode-grid"].forEach(function (selector) {
+            var node = document.querySelector(selector);
+            if (node) node.style.display = "none";
+          });
+          document.querySelectorAll("#page-body > .stack > .card").forEach(function (card) {
+            card.style.display = "none";
+          });
+          input.value = "coffee";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        }, 600);
+      });
+    </script>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/voice.js"></script>
+    <script src="js/markdown.js"></script>
+    <script src="js/selection.js"></script>
+    <script src="js/orb.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/rt.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/screens/home.js"></script>
+    <script src="js/screens/practice.js"></script>
+    <script src="js/screens/session.js"></script>
+    <script src="js/screens/detail.js"></script>
+    <script src="js/screens/settings.js"></script>
+    <script src="js/screens/voices.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

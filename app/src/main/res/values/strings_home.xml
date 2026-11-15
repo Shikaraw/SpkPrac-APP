@@ -4,7 +4,7 @@
     <string name="home_stat_sessions">会话</string>
     <string name="home_stat_time">累计时长</string>
     <string name="home_stat_streak">连续天数</string>
-    <string name="home_search_hint">搜索会话标题或语言…</string>
+    <string name="home_search_hint">搜索会话标题、语言或对话内容…</string>
     <string name="home_no_results">没有匹配的会话</string>
     <string name="home_delete_title">删除这条会话？</string>
     <string name="home_delete_msg">会话记录与练习报告将一并删除，不可恢复。</string>

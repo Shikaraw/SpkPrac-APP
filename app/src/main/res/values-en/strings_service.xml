@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foreground service: ongoing notification shown while a live session is connected (v1.3.0). -->
+    <string name="svc_channel_name">Practice in progress</string>
+    <string name="svc_channel_desc">Keeps the session running in the background and shows its timer</string>
+    <string name="svc_notification_title">Practising</string>
+    <string name="svc_notification_default_mode">Voice session</string>
+</resources>

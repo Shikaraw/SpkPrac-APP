@@ -26,6 +26,7 @@ import com.spkprac.app.net.TextApi
 import com.spkprac.app.rt.RealtimeClient
 import com.spkprac.app.rt.RtEvent
 import com.spkprac.app.rt.SessionConfig
+import com.spkprac.app.service.PracticeService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -139,6 +140,9 @@ class SessionViewModel(app: Application) : AndroidViewModel(app) {
     private var timerJob: Job? = null
     private var playbackJob: Job? = null
     private var micLevelJob: Job? = null
+
+    /** True while the "练习中" foreground service mirrors the live session (v1.3.0 spec §1.3). */
+    private var serviceActive = false
 
     /** Recreated for every session so the previous session's queued PCM can never bleed into a new one. */
     @Volatile
@@ -415,6 +419,10 @@ class SessionViewModel(app: Application) : AndroidViewModel(app) {
         audio.micGain = settings.micGain
         applyTransmitMode()
 
+        // The session is genuinely live (socket confirmed + microphone running): mirror it in the
+        // "练习中" foreground service. A reconnect lands here again but must not restart the timer.
+        startPracticeService()
+
         // A server may confirm the agent setup more than once per socket; replay the history only once
         // per connection or the model receives duplicated context.
         if (connGeneration != replayDoneGeneration) {
@@ -608,6 +616,8 @@ class SessionViewModel(app: Application) : AndroidViewModel(app) {
         client = null
         runCatching { playChannel.close() }
         rawMicLevel = 0f
+        // Ending, failing or retrying the session always clears the ongoing notification.
+        stopPracticeService()
     }
 
     // ------------------------------------------------------------------ user actions
@@ -948,6 +958,30 @@ class SessionViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun str(resId: Int, vararg args: Any): String =
         getApplication<Application>().getString(resId, *args)
+
+    // ------------------------------------------------------------------ foreground service
+
+    /**
+     * Starts the "练习中" ongoing notification exactly once per session (v1.3.0 spec §1.3). It is only
+     * called once the realtime session is connected and the audio engine is running, so the user
+     * never sees a notification for a session that never came up.
+     */
+    private fun startPracticeService() {
+        if (serviceActive) return
+        serviceActive = true
+        val app = getApplication<Application>()
+        val mode = config?.mode ?: _ui.value.mode
+        val label = app.getString(
+            if (mode == Mode.PRACTICE) R.string.mode_practice else R.string.mode_chat
+        )
+        PracticeService.start(app, label, startedAt.takeIf { it > 0L } ?: System.currentTimeMillis())
+    }
+
+    /** Idempotent stop: repeated calls (end + onCleared, retry) are harmless. */
+    private fun stopPracticeService() {
+        serviceActive = false
+        PracticeService.stop(getApplication())
+    }
 
     // ------------------------------------------------------------------ timers & pumps
 

@@ -5,7 +5,7 @@
   const listeners = [];
   const state = {
     settings: null,
-    info: { version: "0.1.1", dataDir: "", sessionsDir: "", platform: "windows" },
+    info: { version: "1.3.0", dataDir: "", sessionsDir: "", platform: "windows" },
     voices: [],
   };
 

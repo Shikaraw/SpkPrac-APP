@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,8 +52,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.spkprac.app.R
 import com.spkprac.app.data.AppSettings
@@ -69,6 +74,7 @@ import com.spkprac.app.ui.components.pressable
 import com.spkprac.app.ui.components.rememberTick
 import com.spkprac.app.ui.theme.Brand
 import com.spkprac.app.ui.theme.isDarkScheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -95,15 +101,33 @@ fun HomeScreen(
 
     var query by remember { mutableStateOf("") }
     var pendingDelete by remember { mutableStateOf<SessionMeta?>(null) }
+    // v1.3.0 spec §3.2: search now also looks inside the transcripts. Reading every session file on
+    // each keystroke would be wasteful, so the query is debounced and the hit map is shown below the
+    // matching rows.
+    var contentHits by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var searchingContent by remember { mutableStateOf(false) }
+    LaunchedEffect(query, sessions) {
+        val q = query.trim()
+        if (q.isEmpty()) {
+            contentHits = emptyMap()
+            searchingContent = false
+            return@LaunchedEffect
+        }
+        delay(200)
+        searchingContent = true
+        contentHits = runCatching { repo.searchContent(q) }.getOrDefault(emptyMap())
+        searchingContent = false
+    }
     val tick = rememberTick()
 
-    val filtered = remember(sessions, query) {
+    val filtered = remember(sessions, query, contentHits) {
         val q = query.trim()
         if (q.isEmpty()) sessions
         else sessions.filter {
             it.title.contains(q, ignoreCase = true) ||
                 Languages.name(it.language).contains(q, ignoreCase = true) ||
-                (it.mode == Mode.PRACTICE && "practice".contains(q, ignoreCase = true))
+                (it.mode == Mode.PRACTICE && "practice".contains(q, ignoreCase = true)) ||
+                contentHits.containsKey(it.id)
         }
     }
 
@@ -207,7 +231,9 @@ fun HomeScreen(
                         stringResource(R.string.recent_sessions),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics { heading() }
                     )
                     if (sessions.isNotEmpty()) {
                         Text(
@@ -230,9 +256,24 @@ fun HomeScreen(
                             Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
                         },
                         trailingIcon = {
-                            if (query.isNotEmpty()) {
-                                IconButton(onClick = { query = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (searchingContent) {
+                                    val searchingDesc = stringResource(R.string.a11y_searching)
+                                    CircularProgressIndicator(
+                                        modifier = Modifier
+                                            .size(16.dp)
+                                            .semantics { contentDescription = searchingDesc },
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                                if (query.isNotEmpty()) {
+                                    IconButton(onClick = { query = "" }) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.a11y_clear_search),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
                                 }
                             }
                         },
@@ -245,17 +286,37 @@ fun HomeScreen(
 
             if (filtered.isEmpty()) {
                 item("empty") {
-                    EmptyState(
-                        icon = if (sessions.isEmpty()) Icons.Default.History else Icons.Default.Search,
-                        title = if (sessions.isEmpty()) stringResource(R.string.no_sessions_hint)
-                        else stringResource(R.string.home_no_results),
-                        subtitle = null
-                    )
+                    // While the transcript search is in flight the list may be empty only because
+                    // hits have not arrived yet — show a small spinner instead of "no results".
+                    if (searchingContent) {
+                        val searchingDesc = stringResource(R.string.a11y_searching)
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 28.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .semantics { contentDescription = searchingDesc },
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    } else {
+                        EmptyState(
+                            icon = if (sessions.isEmpty()) Icons.Default.History else Icons.Default.Search,
+                            title = if (sessions.isEmpty()) stringResource(R.string.no_sessions_hint)
+                            else stringResource(R.string.home_no_results),
+                            subtitle = null
+                        )
+                    }
                 }
             } else {
                 items(filtered, key = { it.id }) { meta ->
                     SessionRow(
                         meta = meta,
+                        snippet = contentHits[meta.id],
                         onClick = { onOpenHistory(meta.id) },
                         onDelete = { pendingDelete = meta }
                     )
@@ -296,7 +357,8 @@ private fun HeroHeader(onSettings: () -> Unit) {
             Text(
                 stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { heading() }
             )
             Text(
                 stringResource(R.string.home_tagline),
@@ -332,7 +394,9 @@ private fun ModeCard(
     Card(
         modifier = modifier
             .height(168.dp)
-            .pressable(scaleTo = 0.97f, onClick = onClick),
+            .pressable(scaleTo = 0.97f, onClickLabel = title, onClick = onClick)
+            // Card content is pure text: merge it so TalkBack reads one labelled button.
+            .semantics(mergeDescendants = true) {},
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -380,13 +444,19 @@ private fun ModeCard(
 }
 
 @Composable
-private fun SessionRow(meta: SessionMeta, onClick: () -> Unit, onDelete: () -> Unit) {
+private fun SessionRow(
+    meta: SessionMeta,
+    snippet: String?,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
     val practice = meta.mode == Mode.PRACTICE
     val accent = if (practice) Brand.warm(isDarkScheme()).first() else Brand.accent(isDarkScheme()).first()
+    val openLabel = stringResource(R.string.a11y_open_session)
     Card(
         Modifier
             .fillMaxWidth()
-            .pressable(scaleTo = 0.985f, onClick = onClick),
+            .pressable(scaleTo = 0.985f, onClickLabel = openLabel, onClick = onClick),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -428,11 +498,22 @@ private fun SessionRow(meta: SessionMeta, onClick: () -> Unit, onDelete: () -> U
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
+                // Content-search match: one grey ellipsised line under the row (spec §3.2).
+                if (snippet != null) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        snippet,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
             IconButton(onClick = onDelete) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.delete),
+                    contentDescription = stringResource(R.string.a11y_delete_session),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     modifier = Modifier.size(19.dp)
                 )

@@ -47,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -178,7 +180,8 @@ fun VoiceDetailScreen(
                 title = {
                     Text(
                         stringResource(R.string.voice_detail),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.semantics { heading() }
                     )
                 },
                 navigationIcon = {
@@ -406,7 +409,7 @@ private fun DetailInfoRow(
     monospace: Boolean = false,
     trailing: (@Composable () -> Unit)? = null
 ) {
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,

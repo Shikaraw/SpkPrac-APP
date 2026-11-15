@@ -2,10 +2,12 @@ package com.spkprac.app.net
 
 import com.spkprac.app.BuildConfig
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
@@ -58,6 +60,25 @@ object AppVersion {
     }
 }
 
+/** How many releases are scanned per check. One page is enough for the release cadence. */
+private const val RELEASE_PAGE_SIZE = 30
+
+/** Reads a string field defensively: a missing/null/wrong-typed value becomes "". */
+private fun JsonObject.stringField(name: String): String =
+    (this[name] as? JsonPrimitive)?.contentOrNull.orEmpty()
+
+/** Reads an optional string field defensively: absent/null becomes null. */
+private fun JsonObject.optStringField(name: String): String? =
+    (this[name] as? JsonPrimitive)?.contentOrNull
+
+/** Reads a long field defensively: absent/null/non-numeric becomes null. */
+private fun JsonObject.longField(name: String): Long? =
+    (this[name] as? JsonPrimitive)?.contentOrNull?.toLongOrNull()
+
+/** Reads a boolean field defensively: absent/null/wrong-typed becomes false. */
+private fun JsonObject.booleanField(name: String): Boolean =
+    (this[name] as? JsonPrimitive)?.booleanOrNull ?: false
+
 /**
  * Checks GitHub Releases for a newer build.
  *
@@ -77,6 +98,46 @@ class UpdateChecker(
 
         /** Prefix used to accelerate release-asset downloads through the same mirror. */
         const val ASSET_MIRROR = "https://gh-proxy.com/"
+
+        /** Android release tags are plain `vX.Y.Z`; pre-release/build suffixes are tolerated. */
+        private val VERSION_TAG = Regex("""^v?\d+\.\d+\.\d+(?:[-+].*)?$""")
+
+        /**
+         * Picks the newest Android release out of a GitHub `GET /releases` array (spec §2.2).
+         *
+         * The API returns the array newest-first, so the first element that passes every filter is
+         * the candidate build:
+         *  1. `draft == false`;
+         *  2. `tag_name` starts with a lowercase `v`;
+         *  3. `tag_name` does not start with `pc-v` (the Windows channel);
+         *  4. `tag_name` carries an `x.y.z` version.
+         *
+         * Returns `null` when no element qualifies; callers treat that as "already up to date".
+         * Pure function (no network, no Android types) so the filter can be reasoned about / verified.
+         */
+        internal fun pickLatestRelease(releases: JsonArray): JsonObject? {
+            for (element in releases) {
+                val release = element as? JsonObject ?: continue
+                // 1. drafts are never published.
+                if (release.booleanField("draft")) continue
+                val tag = release.stringField("tag_name")
+                // 2 + 3. Android channel only; `pc-v1.2.0` never starts with `v`, but exclude it
+                // explicitly because a careless `tag.removePrefix("v")` would otherwise match it.
+                if (!isAndroidReleaseTag(tag)) continue
+                // 4. a tag must resolve to a comparable x.y.z version.
+                if (parseVersion(tag) == null) continue
+                return release
+            }
+            return null
+        }
+
+        /** True for Android release tags (`v*`) and false for the Windows ones (`pc-v*`). */
+        internal fun isAndroidReleaseTag(tag: String): Boolean =
+            tag.startsWith("v") && !tag.startsWith("pc-v")
+
+        /** `"v1.2.3"` -> `"1.2.3"`; null when [tag] is not an x.y.z version tag. */
+        internal fun parseVersion(tag: String): String? =
+            if (VERSION_TAG.matches(tag)) tag.removePrefix("v") else null
 
         /** Rewrites a GitHub asset URL through the mirror when the user enabled it. */
         fun acceleratedDownloadUrl(info: UpdateInfo, useProxy: Boolean): String {
@@ -101,8 +162,12 @@ class UpdateChecker(
 
         var lastError: String? = null
         for (base in bases) {
-            val url = "$base/repos/$owner/$repo/releases/latest"
-            when (val result = fetchLatest(url)) {
+            // `/releases/latest` is ordered by publish time, and this repository also ships Windows
+            // builds (`pc-v*`). Publish a PC release after an Android one and "latest" points at the
+            // PC tag, so the Android client wrongly concluded it was up to date (v1.3.0 spec §2.1).
+            // Fetch the list instead and pick the Android tag ourselves.
+            val url = "$base/repos/$owner/$repo/releases?per_page=$RELEASE_PAGE_SIZE"
+            when (val result = fetchReleases(url)) {
                 is UpdateCheck.Failed -> {
                     lastError = result.message
                     continue
@@ -114,7 +179,7 @@ class UpdateChecker(
         return UpdateCheck.Failed(lastError)
     }
 
-    private fun fetchLatest(url: String): UpdateCheck {
+    private fun fetchReleases(url: String): UpdateCheck {
         val request = Request.Builder()
             .url(url)
             .header("Accept", "application/vnd.github+json")
@@ -128,54 +193,47 @@ class UpdateChecker(
                     return UpdateCheck.Failed("HTTP ${response.code}")
                 }
                 val body = response.body?.string().orEmpty()
-                parseLatest(body)
+                parseReleases(body)
             }
         } catch (e: Exception) {
             UpdateCheck.Failed(e.message)
         }
     }
 
-    private fun parseLatest(body: String): UpdateCheck {
-        val root = try {
-            json.parseToJsonElement(body).jsonObject
+    private fun parseReleases(body: String): UpdateCheck {
+        val releases = try {
+            json.parseToJsonElement(body).jsonArray
         } catch (e: Exception) {
             return UpdateCheck.Failed(e.message)
         }
+        // No release matching the Android channel simply means "already up to date" (spec §2.2).
+        val release = pickLatestRelease(releases) ?: return UpdateCheck.UpToDate
         return try {
-            val draft = root["draft"]?.jsonPrimitive?.contentOrNull?.toBoolean() ?: false
-            val tag = root["tag_name"]?.jsonPrimitive?.contentOrNull.orEmpty()
-            val htmlUrl = root["html_url"]?.jsonPrimitive?.contentOrNull.orEmpty()
-            val notes = root["body"]?.jsonPrimitive?.contentOrNull.orEmpty()
-            val published = root["published_at"]?.jsonPrimitive?.contentOrNull
-            val version = tag.removePrefix("v").ifBlank { "0.0.0" }
-
-            if (draft) return UpdateCheck.UpToDate
+            val tag = release.stringField("tag_name")
+            val version = parseVersion(tag) ?: return UpdateCheck.UpToDate
+            if (AppVersion.compare(version, AppVersion.current) <= 0) {
+                return UpdateCheck.UpToDate
+            }
 
             val apkAsset = runCatching {
-                root["assets"]?.jsonArray?.firstOrNull { element ->
-                    val name = element.jsonObject["name"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                release["assets"]?.jsonArray?.firstOrNull { element ->
+                    val name = (element as? JsonObject)?.stringField("name").orEmpty()
                     name.endsWith(".apk", ignoreCase = true)
-                }?.jsonObject
+                } as? JsonObject
             }.getOrNull()
 
-            val apkUrl = apkAsset?.get("browser_download_url")?.jsonPrimitive?.contentOrNull
-            val apkSize = apkAsset?.get("size")?.jsonPrimitive?.contentOrNull?.toLongOrNull()
-
-            if (AppVersion.compare(version, AppVersion.current) > 0) {
-                UpdateCheck.Available(
-                    UpdateInfo(
-                        version = version,
-                        tag = tag,
-                        notes = notes,
-                        releaseUrl = htmlUrl.ifBlank { AppVersion.RELEASES_PAGE },
-                        apkUrl = apkUrl,
-                        apkSize = apkSize,
-                        publishedAt = published
-                    )
+            UpdateCheck.Available(
+                UpdateInfo(
+                    version = version,
+                    tag = tag,
+                    notes = release.stringField("body"),
+                    releaseUrl = release.stringField("html_url")
+                        .ifBlank { AppVersion.RELEASES_PAGE },
+                    apkUrl = apkAsset?.optStringField("browser_download_url"),
+                    apkSize = apkAsset?.longField("size"),
+                    publishedAt = release.optStringField("published_at")
                 )
-            } else {
-                UpdateCheck.UpToDate
-            }
+            )
         } catch (e: Exception) {
             UpdateCheck.Failed(e.message)
         }

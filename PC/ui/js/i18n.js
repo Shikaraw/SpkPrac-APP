@@ -46,13 +46,14 @@
     "home.mode_practice_desc": "选语言和水平，教练实时纠错",
     "home.mode_start": "开始",
     "home.history": "练习历史",
-    "home.search_ph": "搜索标题或语言…",
+    "home.search_ph": "搜索标题、语言或对话内容…",
     "home.empty_title": "还没有练习记录",
     "home.empty_sub": "完成第一次对话后，这里会显示会话内容、时长和练习报告。",
     "home.delete_title": "删除这条记录？",
     "home.delete_body": "会话内容与练习报告将一并删除，无法恢复。",
     "home.deleted": "已删除",
     "home.no_match": "没有匹配的记录",
+    "home.no_match_sub": "试试搜索标题、语言或对话内容",
     "home.day_streak": "连续 {n} 天",
 
     "practice.title": "口语练习设置",
@@ -325,6 +326,15 @@
     "upd.done": "下载完成：{path}",
     "upd.failed": "下载失败",
     "upd.no_asset": "该版本没有 Windows 安装包，请打开发布页",
+
+    "sel.translate": "翻译",
+    "sel.ask": "问 AI",
+    "sel.ask_title": "问 AI",
+    "sel.translating": "正在翻译…",
+    "sel.translate_failed": "翻译失败：{msg}",
+    "sel.thinking": "正在思考…",
+    "sel.ask_failed": "请求失败：{msg}",
+    "sel.err_no_model": "请先在设置里配置文本模型（接口地址、模型和 API Key）",
   };
 
   const en = {
@@ -373,13 +383,14 @@
     "home.mode_practice_desc": "Pick a language and level, get live corrections",
     "home.mode_start": "Start",
     "home.history": "History",
-    "home.search_ph": "Search title or language…",
+    "home.search_ph": "Search titles, languages or transcript text…",
     "home.empty_title": "No sessions yet",
     "home.empty_sub": "Once you finish a conversation it shows up here with its transcript and report.",
     "home.delete_title": "Delete this session?",
     "home.delete_body": "The transcript and report will be removed permanently.",
     "home.deleted": "Deleted",
     "home.no_match": "No matching sessions",
+    "home.no_match_sub": "Search titles, languages or transcript text",
     "home.day_streak": "{n}-day streak",
 
     "practice.title": "Practice setup",
@@ -652,6 +663,15 @@
     "upd.done": "Downloaded to {path}",
     "upd.failed": "Download failed",
     "upd.no_asset": "This release has no Windows build; open the release page",
+
+    "sel.translate": "Translate",
+    "sel.ask": "Ask AI",
+    "sel.ask_title": "Ask AI",
+    "sel.translating": "Translating…",
+    "sel.translate_failed": "Translation failed: {msg}",
+    "sel.thinking": "Thinking…",
+    "sel.ask_failed": "Request failed: {msg}",
+    "sel.err_no_model": "Configure the text model first (endpoint, model and API key)",
   };
 
   const dict = { zh, en };

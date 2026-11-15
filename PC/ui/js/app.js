@@ -134,6 +134,8 @@
     app.route = route;
     app.params = params || null;
     writeHash(route, app.params);
+    // Let global overlays (e.g. the selected-text toolbar) dismiss themselves on navigation.
+    document.dispatchEvent(new CustomEvent("sp:navigate", { detail: { route: route } }));
 
     const body = document.getElementById("page-body");
     body.scrollTop = 0;

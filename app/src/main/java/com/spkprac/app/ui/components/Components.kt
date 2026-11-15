@@ -52,11 +52,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.spkprac.app.ui.theme.Brand
 import com.spkprac.app.ui.theme.LocalUiPrefs
 import androidx.compose.foundation.background
 import androidx.compose.material3.Surface
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 
 /* ---------------------------------------------------------------- layout */
 
@@ -91,7 +99,10 @@ fun SectionCard(
                     title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    // Section titles are real headings so TalkBack's heading navigation can jump
+                    // between them (spec §4.3).
+                    modifier = Modifier.semantics { heading() }
                 )
             }
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) { content() }
@@ -107,7 +118,12 @@ fun SwitchRow(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        Modifier.fillMaxWidth(),
+        Modifier
+            .fillMaxWidth()
+            // The whole row is the switch: one focusable node whose label is the visible title and
+            // subtitle, instead of an unlabelled Switch next to two stray text nodes (spec §4).
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -124,7 +140,8 @@ fun SwitchRow(
         Spacer(Modifier.width(12.dp))
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            // The row above owns the toggle action; a second action here would be announced twice.
+            onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 checkedTrackColor = MaterialTheme.colorScheme.primary
@@ -230,11 +247,16 @@ fun SegmentedSelector(
 /**
  * Click + press-to-scale feedback. Replaces a plain [clickable] so tap targets feel physical.
  * Honours the "animations" preference: when disabled the scale simply stays at 1f.
+ *
+ * The extra semantics matter for TalkBack: without `role = Role.Button` a pressed card is announced
+ * as an anonymous container, and without the explicit onClick action some services never offer
+ * "activate" (spec §4.7).
  */
 @Composable
 fun Modifier.pressable(
     enabled: Boolean = true,
     scaleTo: Float = 0.96f,
+    onClickLabel: String? = null,
     onClick: () -> Unit
 ): Modifier {
     val animations = LocalUiPrefs.current.animations
@@ -254,8 +276,17 @@ fun Modifier.pressable(
             interactionSource = interaction,
             indication = LocalIndication.current,
             enabled = enabled,
+            onClickLabel = onClickLabel,
             onClick = onClick
         )
+        .semantics {
+            role = Role.Button
+            if (enabled) {
+                onClick { onClick(); true }
+            } else {
+                disabled()
+            }
+        }
 }
 
 /** Returns a lambda that fires a short haptic tick when the user has haptics enabled. */
@@ -282,7 +313,8 @@ fun PillLabel(
         color = container,
         contentColor = contentColor,
         shape = RoundedCornerShape(50),
-        modifier = modifier
+        // One node per pill: icon (decorative) + label read as a single phrase.
+        modifier = modifier.semantics(mergeDescendants = true) {}
     ) {
         Row(
             Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -307,7 +339,7 @@ fun StatTile(
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
-        modifier = modifier
+        modifier = modifier.semantics(mergeDescendants = true) {}
     ) {
         Column(
             Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -384,5 +416,7 @@ fun StatusDot(color: androidx.compose.ui.graphics.Color, size: Int = 10, pulse: 
             .size(size.dp)
             .graphicsLayer { this.alpha = alpha }
             .background(color, RoundedCornerShape(50))
+            // Colour-only decoration: the status text right next to it already says this.
+            .clearAndSetSemantics {}
     )
 }

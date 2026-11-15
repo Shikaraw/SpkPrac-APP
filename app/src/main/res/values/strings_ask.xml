@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Selected-text actions (v1.3.0 spec §5.2): the two extra entries in the system text-selection
+  menu plus the result dialog that shows what the text model answered.
+-->
+<resources>
+
+    <!-- selection menu entries (also used as dialog titles) -->
+    <string name="ask_translate">翻译</string>
+    <string name="ask_ai">问 AI</string>
+
+    <!-- dialog body -->
+    <string name="ask_loading">正在向文本模型请求…</string>
+    <string name="ask_no_model">请先在「设置 → 接口与模型」里配置文本模型：填写文本接口地址、API Key 与模型名后再试。</string>
+    <string name="ask_failed">请求失败：%1$s</string>
+    <string name="ask_copy">复制</string>
+    <string name="ask_copied">已复制</string>
+
+    <!-- system prompt for "ask AI" (explain / give examples) -->
+    <string name="ask_system_explain">你是一位耐心的语言学习助手。用户会给你一段从对话中选中的文本，请：\n1. 如果它不是中文，先给出中文翻译；\n2. 解释它的含义、用法和语气；\n3. 给出 1-2 个例句。\n用简洁的中文正文回答，不要使用 Markdown 标题。</string>
+</resources>

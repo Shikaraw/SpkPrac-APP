@@ -53,6 +53,15 @@ Android 版 [SpkPrac](../README.md) 的 Windows 桌面移植版：全双工实�
 - Aurora 流光背景、Canvas 语音球（聆听随电平脉动 / 思考虚线旋转 / 说话环形波纹 / 失败静止）
 - 气泡进场动画、思考三点、渐变压感卡片、页面转场
 
+### 选中文本：翻译 / 问 AI
+
+- 在会话页/详情页选中文字，浮出工具条：翻译（文本模型，仅输出译文）或问 AI（Markdown 结果，可复制）
+- 滚动、点击别处、Esc、选区清空自动收起
+
+### 搜索对话内容
+
+- 首页搜索可命中对话正文，命中行下方显示灰色单次片段
+
 ### 音色与声音复刻
 
 - 实时模型为 `qwen3.8-omni-flash-realtime` 时，音色提供官方 33 个系统音色下拉 + 自由输入
@@ -93,7 +102,7 @@ cargo build --release
 
 | 项 | 大小 |
 |---|---|
-| 最终 exe | **4.06 MB** |
+| 最终 exe | **4.07 MB** |
 | 其中 Tauri + wry + WebView2 绑定 | 约 2.6 MB |
 | 网络栈（tokio + tungstenite + native-tls/Schannel） | 约 0.7 MB |
 | 应用逻辑 + 内嵌前端 | 约 0.6 MB |
@@ -146,8 +155,8 @@ PC/
 PC 版 Release 用独立标签，避免与 Android 混淆：
 
 ```bash
-git tag pc-v1.2.0
-git push origin pc-v1.2.0
+git tag pc-v1.3.0
+git push origin pc-v1.3.0
 ```
 
 把 `SpkPrac.exe` 作为资产上传到该 Release，应用即可自动检测到。

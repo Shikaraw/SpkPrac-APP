@@ -74,6 +74,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -91,6 +92,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role as SemanticsRole
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -113,12 +123,16 @@ import com.spkprac.app.ui.components.LevelMeter
 import com.spkprac.app.ui.components.MarkdownText
 import com.spkprac.app.ui.components.OrbState
 import com.spkprac.app.ui.components.PillLabel
+import com.spkprac.app.ui.components.SelectableText
+import com.spkprac.app.ui.components.SelectionActions
+import com.spkprac.app.ui.components.SelectionDialogHost
 import com.spkprac.app.ui.components.StatusDot
 import com.spkprac.app.ui.components.ThinkingDots
 import com.spkprac.app.ui.components.VoiceOrb
 import com.spkprac.app.ui.theme.captionTextStyle
 import com.spkprac.app.ui.components.orbStateOf
 import com.spkprac.app.ui.components.pressable
+import com.spkprac.app.ui.components.rememberSelectionActions
 import com.spkprac.app.ui.components.rememberTick
 import com.spkprac.app.ui.theme.Brand
 import com.spkprac.app.ui.theme.LocalUiPrefs
@@ -187,6 +201,8 @@ fun SessionScreen(
     val orb = orbStateOf(ui.status, ui.agentState)
     val ended = ui.status == St.ENDED
     var reportDismissed by remember { mutableStateOf(false) }
+    // Long-press → translate / ask AI on any transcript bubble (v1.3.0 spec §5.2).
+    val selectionActions = rememberSelectionActions()
 
     AuroraBackground(Modifier.fillMaxSize()) {
         Column(
@@ -202,7 +218,7 @@ fun SessionScreen(
                 if (ui.messages.isEmpty() && ui.liveUser.isBlank() && ui.liveAgent.isBlank()) {
                     Stage(ui = ui, orbState = orb, mode = cfg.mode, onRetry = vm::retry)
                 } else {
-                    Transcript(ui = ui)
+                    Transcript(ui = ui, selectionActions = selectionActions)
                 }
             }
 
@@ -257,6 +273,8 @@ fun SessionScreen(
             onDismiss = { reportDismissed = true }
         )
     }
+
+    SelectionDialogHost(selectionActions)
 }
 
 /* ---------------------------------------------------------------- header */
@@ -301,7 +319,16 @@ private fun SessionHeader(ui: Ui, cfg: SessionStartConfig, orbState: OrbState) {
         VoiceOrb(state = orbState, level = ui.micLevel, size = 44.dp)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                // TalkBack announces the state capsule whenever the agent starts listening /
+                // thinking / speaking; stateDescription gives the same text to accessibility
+                // services that do not read the child (spec §4.4).
+                Modifier.semantics {
+                    liveRegion = LiveRegionMode.Polite
+                    stateDescription = statusLabel
+                },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 StatusDot(color = statusColor, size = 8, pulse = ui.status != St.ENDED)
                 Spacer(Modifier.width(6.dp))
                 Text(
@@ -329,12 +356,18 @@ private fun SessionHeader(ui: Ui, cfg: SessionStartConfig, orbState: OrbState) {
                 }
             }
         }
+        val clock = "%d:%02d".format(min, sec)
+        val elapsedDescription = stringResource(R.string.a11y_elapsed, clock)
         Surface(
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
-            shape = RoundedCornerShape(50)
+            shape = RoundedCornerShape(50),
+            modifier = Modifier.semantics(mergeDescendants = true) {
+                // "0:42" would be read digit by digit; say what it is instead.
+                contentDescription = elapsedDescription
+            }
         ) {
             Text(
-                "%d:%02d".format(min, sec),
+                clock,
                 Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = FontFamily.Monospace
@@ -389,13 +422,16 @@ private fun Stage(ui: Ui, orbState: OrbState, mode: Mode, onRetry: () -> Unit) {
 /* ------------------------------------------------------------- transcript */
 
 @Composable
-private fun Transcript(ui: Ui) {
+private fun Transcript(ui: Ui, selectionActions: SelectionActions) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val animatedIds = remember { mutableSetOf<String>() }
     val showUserLive = ui.settings.subtitleUser && ui.liveUser.isNotBlank()
     val showAgentLive = ui.settings.subtitleAi && ui.liveAgent.isNotBlank()
     val total = ui.messages.size + (if (showUserLive) 1 else 0) + (if (showAgentLive) 1 else 0)
+    // Only the newest settled message is a live region: announcing every bubble (or the streaming
+    // subtitle) would turn the transcript into a TalkBack monologue.
+    val newestMessageId = ui.messages.lastOrNull()?.id
 
     val atBottom by remember {
         derivedStateOf {
@@ -419,17 +455,22 @@ private fun Transcript(ui: Ui) {
         ) {
             items(ui.messages, key = { it.id }) { m ->
                 val firstAppearance = m.id !in animatedIds
-                BubbleItem(m, animateIn = firstAppearance)
+                BubbleItem(
+                    m = m,
+                    animateIn = firstAppearance,
+                    selectionActions = selectionActions,
+                    announce = m.id == newestMessageId
+                )
                 LaunchedEffect(m.id) { animatedIds.add(m.id) }
             }
             if (showUserLive) {
                 item(key = "live_user") {
-                    Bubble(role = Role.USER, text = ui.liveUser, translation = null)
+                    Bubble(role = Role.USER, text = ui.liveUser, translation = null, selectionActions = selectionActions)
                 }
             }
             if (showAgentLive) {
                 item(key = "live_agent") {
-                    Bubble(role = Role.ASSISTANT, text = ui.liveAgent, translation = null)
+                    Bubble(role = Role.ASSISTANT, text = ui.liveAgent, translation = null, selectionActions = selectionActions)
                 }
             }
             if (ui.agentState == Agent.THINKING && ui.liveAgent.isBlank()) {
@@ -462,7 +503,10 @@ private fun Transcript(ui: Ui) {
                 color = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = RoundedCornerShape(50),
-                modifier = Modifier.pressable {
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .semantics(mergeDescendants = true) {}
+                    .pressable {
                     scope.launch {
                         listState.animateScrollToItem((total - 1).coerceAtLeast(0))
                     }
@@ -486,7 +530,12 @@ private fun Transcript(ui: Ui) {
 }
 
 @Composable
-private fun BubbleItem(m: ChatMessage, animateIn: Boolean) {
+private fun BubbleItem(
+    m: ChatMessage,
+    animateIn: Boolean,
+    selectionActions: SelectionActions,
+    announce: Boolean
+) {
     val animations = LocalUiPrefs.current.animations
     var visible by remember(m.id) { mutableStateOf(!animateIn || !animations) }
     LaunchedEffect(m.id) { visible = true }
@@ -494,18 +543,34 @@ private fun BubbleItem(m: ChatMessage, animateIn: Boolean) {
         visible = visible,
         enter = fadeIn() + slideInVertically(spring()) { it / 3 }
     ) {
-        Bubble(role = m.role, text = m.text, translation = m.translation)
+        Bubble(
+            role = m.role,
+            text = m.text,
+            translation = m.translation,
+            selectionActions = selectionActions,
+            announce = announce
+        )
     }
 }
 
 @Composable
-private fun Bubble(role: Role, text: String, translation: String?) {
+private fun Bubble(
+    role: Role,
+    text: String,
+    translation: String?,
+    selectionActions: SelectionActions,
+    announce: Boolean = false
+) {
     val isUser = role == Role.USER
     val accent = Brand.accent(isDarkScheme())
     val style = captionTextStyle()
 
     Column(
-        Modifier.fillMaxWidth(),
+        Modifier
+            .fillMaxWidth()
+            .then(
+                if (announce) Modifier.semantics { liveRegion = LiveRegionMode.Polite } else Modifier
+            ),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
         Surface(
@@ -534,10 +599,14 @@ private fun Bubble(role: Role, text: String, translation: String?) {
                     .padding(horizontal = 15.dp, vertical = 11.dp)
                     .widthIn(max = 320.dp)
             ) {
-                Text(
-                    text,
+                SelectableText(
+                    text = text,
+                    style = style,
                     color = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface,
-                    style = style
+                    highlightColor = if (isUser) Color.White.copy(alpha = 0.35f)
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
+                    onTranslate = selectionActions::translate,
+                    onAskAi = selectionActions::askAi
                 )
             }
         }
@@ -578,6 +647,11 @@ private fun ErrorBanner(text: String, onDismiss: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
+            // Errors appear without a tap, so they must be announced (spec §4.4).
+            .semantics {
+                liveRegion = LiveRegionMode.Polite
+                stateDescription = text
+            }
     ) {
         Row(
             Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
@@ -596,7 +670,13 @@ private fun ErrorBanner(text: String, onDismiss: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
-            IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+            // 32dp visual size, 48dp touch target (spec §4.2).
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .minimumInteractiveComponentSize()
+                    .size(32.dp)
+            ) {
                 Icon(
                     Icons.Default.Close,
                     contentDescription = stringResource(R.string.close),
@@ -709,7 +789,10 @@ private fun Controls(
                 icon = if (ui.micMuted) Icons.Default.MicOff else Icons.Default.Mic,
                 contentDesc = stringResource(R.string.mute_mic),
                 checked = ui.micMuted,
-                enabled = active
+                enabled = active,
+                stateDesc = stringResource(
+                    if (ui.micMuted) R.string.a11y_mic_state_muted else R.string.a11y_mic_state_live
+                )
             ) {
                 tick()
                 onMute()
@@ -751,6 +834,7 @@ private fun Controls(
 private fun EndButton(ended: Boolean, onEnd: () -> Unit, onExit: () -> Unit) {
     val tick = rememberTick()
     val errorColor = MaterialTheme.colorScheme.error
+    val label = stringResource(if (ended) R.string.back_home else R.string.end_call)
     Box(
         Modifier
             .size(64.dp)
@@ -758,6 +842,7 @@ private fun EndButton(ended: Boolean, onEnd: () -> Unit, onExit: () -> Unit) {
                 tick()
                 if (ended) onExit() else onEnd()
             }
+            .semantics(mergeDescendants = true) { contentDescription = label }
             .background(
                 Brush.linearGradient(listOf(errorColor, errorColor.copy(alpha = 0.78f))),
                 CircleShape
@@ -765,11 +850,11 @@ private fun EndButton(ended: Boolean, onEnd: () -> Unit, onExit: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         if (ended) {
-            Icon(Icons.Default.Home, contentDescription = stringResource(R.string.back_home), tint = Color.White, modifier = Modifier.size(24.dp))
+            Icon(Icons.Default.Home, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
         } else {
             Icon(
                 Icons.Default.CallEnd,
-                contentDescription = stringResource(R.string.end_call),
+                contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(26.dp)
             )
@@ -783,12 +868,19 @@ private fun RoundIconBtn(
     contentDesc: String,
     checked: Boolean,
     enabled: Boolean,
+    stateDesc: String? = null,
     onClick: () -> Unit
 ) {
     FilledIconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(52.dp),
+        modifier = Modifier
+            .size(52.dp)
+            .then(
+                if (stateDesc != null) {
+                    Modifier.semantics { stateDescription = stateDesc }
+                } else Modifier
+            ),
         shape = CircleShape,
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = if (checked) MaterialTheme.colorScheme.primary
@@ -895,6 +987,9 @@ private fun routeLabel(route: AudioRoute): String = stringResource(
 private fun PttButton(active: Boolean, pressed: Boolean, onPress: () -> Unit, onRelease: () -> Unit) {
     val accent = Brand.accent(isDarkScheme())
     val shape = RoundedCornerShape(28.dp)
+    val buttonLabel = stringResource(if (pressed) R.string.ptt_release else R.string.ptt_hold)
+    val idleHint = stringResource(R.string.a11y_ptt_idle)
+    val recordingHint = stringResource(R.string.a11y_ptt_recording)
     val container = if (pressed) {
         Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primary))
     } else {
@@ -905,6 +1000,19 @@ private fun PttButton(active: Boolean, pressed: Boolean, onPress: () -> Unit, on
             .fillMaxWidth()
             .height(56.dp)
             .background(container, shape)
+            // A hold-to-talk gesture is impossible with TalkBack, so expose a double-tap toggle:
+            // first activation starts recording, the next one sends. Normal touch is unchanged.
+            .semantics {
+                role = SemanticsRole.Button
+                contentDescription = buttonLabel
+                stateDescription = if (pressed) recordingHint else idleHint
+                onClick {
+                    if (active) {
+                        if (pressed) onRelease() else onPress()
+                    }
+                    true
+                }
+            }
             .pointerInput(active) {
                 detectTapGestures(
                     onPress = {
@@ -930,7 +1038,7 @@ private fun PttButton(active: Boolean, pressed: Boolean, onPress: () -> Unit, on
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                stringResource(if (pressed) R.string.ptt_release else R.string.ptt_hold),
+                buttonLabel,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
             )
@@ -961,7 +1069,9 @@ private fun ReportDialog(
                         stringResource(R.string.practice_report),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics { heading() }
                     )
                     if (saved) {
                         PillLabel(
@@ -975,7 +1085,9 @@ private fun ReportDialog(
                 Box(Modifier.height(340.dp)) {
                     when {
                         generating -> Column(
-                            Modifier.fillMaxSize(),
+                            Modifier
+                                .fillMaxSize()
+                                .semantics { liveRegion = LiveRegionMode.Polite },
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {

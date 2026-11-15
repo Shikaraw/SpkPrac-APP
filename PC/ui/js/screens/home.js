@@ -4,6 +4,25 @@
   const t = (k, v) => SP.i18n.t(k, v);
 
   let query = "";
+  /** sessionId -> content-search snippet from the last `sessions_search` call. */
+  let contentHits = {};
+  let searchToken = 0;
+
+  function languageName(code) {
+    if (!code) return "";
+    return SP.languages && SP.languages.name ? SP.languages.name(code) : code;
+  }
+
+  function matches(meta) {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return (
+      (meta.title || "").toLowerCase().indexOf(q) >= 0 ||
+      (meta.language || "").toLowerCase().indexOf(q) >= 0 ||
+      languageName(meta.language).toLowerCase().indexOf(q) >= 0 ||
+      Object.prototype.hasOwnProperty.call(contentHits, meta.id)
+    );
+  }
 
   function statTile(value, labelKey) {
     return `
@@ -35,8 +54,13 @@
           <div class="session-meta">
             ${esc(fmtDate(meta.createdAt))} · ${esc(fmtDurationShort(meta.durationMs))} · ${esc(
       t("detail.messages", { n: meta.messageCount })
-    )}${meta.language ? " · " + esc(meta.language) : ""}
+    )}${meta.language ? " · " + esc(languageName(meta.language)) : ""}
           </div>
+          ${
+            contentHits[meta.id]
+              ? `<div class="session-snippet truncate">${esc(contentHits[meta.id])}</div>`
+              : ""
+          }
         </div>
         <div class="row" style="gap:6px">
           <span class="pill ${practice ? "" : "neutral"}">${esc(
@@ -55,18 +79,15 @@
   }
 
   function renderList(listEl, sessions) {
-    const filtered = sessions.filter((s) => {
-      if (!query) return true;
-      const q = query.toLowerCase();
-      return (
-        (s.title || "").toLowerCase().indexOf(q) >= 0 ||
-        (s.language || "").toLowerCase().indexOf(q) >= 0
-      );
-    });
+    const filtered = sessions.filter(matches);
+    const section = listEl.closest("section");
+    const countEl = section ? section.querySelector(".section-count") : null;
+    if (countEl) countEl.textContent = String(filtered.length);
     if (!filtered.length) {
       listEl.innerHTML = `<div class="empty">
         <div class="empty-art">${icon("search", 26)}</div>
         <div class="empty-title">${esc(t("home.no_match"))}</div>
+        ${query ? `<div class="empty-sub">${esc(t("home.no_match_sub"))}</div>` : ""}
       </div>`;
       return;
     }
@@ -141,13 +162,14 @@
       <section class="stack" style="gap:12px">
         <div class="section-head">
           <div class="section-title">${esc(t("home.history"))}</div>
-          <div class="section-count">${sessions.length}</div>
+          <div class="section-count" id="history-count">${sessions.length}</div>
         </div>
         <div class="search">
           ${icon("search", 15)}
           <input class="input" id="history-search" placeholder="${esc(
             t("home.search_ph")
           )}" value="${esc(query)}" />
+          <span class="search-busy hidden" id="search-busy"><span class="spinner"></span></span>
         </div>
         <div class="list" id="history-list"></div>
       </section>
@@ -181,13 +203,55 @@
     });
 
     const search = content.querySelector("#history-search");
+    const busyEl = content.querySelector("#search-busy");
+    const setBusy = (on) => {
+      if (busyEl) busyEl.classList.toggle("hidden", !on);
+    };
+
+    // Spec §3.2: full-text search goes through `sessions_search` (debounced, never on empty input).
+    const runContentSearch = async () => {
+      const q = query.trim();
+      if (!q) {
+        contentHits = {};
+        setBusy(false);
+        renderList(listEl, sessions);
+        return;
+      }
+      const token = ++searchToken;
+      setBusy(true);
+      try {
+        const hits = await SP.api.searchSessions(q);
+        if (token !== searchToken || !listEl.isConnected) return;
+        contentHits = {};
+        (hits || []).forEach((hit) => {
+          if (hit && hit.id) contentHits[hit.id] = hit.snippet || "";
+        });
+      } catch (_) {
+        if (token !== searchToken) return;
+        contentHits = {};
+      }
+      setBusy(false);
+      renderList(listEl, sessions);
+    };
+
     search.addEventListener(
       "input",
       SP.ui.debounce((e) => {
         query = e.target.value;
+        contentHits = {};
         renderList(listEl, sessions);
-      }, 140)
+        if (!query.trim()) {
+          // Empty query: cancel any in-flight request and stay title/language only.
+          searchToken += 1;
+          setBusy(false);
+          return;
+        }
+        runContentSearch();
+      }, 200)
     );
+
+    // Re-entering the screen keeps the last query: refresh its content hits.
+    if (query.trim()) runContentSearch();
 
     return {
       titleKey: "nav.home",

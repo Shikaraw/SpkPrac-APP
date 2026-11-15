@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-animations="on">
+  <head>
+    <meta charset="utf-8" />
+    <base href="../ui/" />
+    <meta name="color-scheme" content="dark light" />
+    <title>SpkPrac — selection toolbar preview</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/screens.css" />
+  </head>
+  <body>
+    <div class="aurora" aria-hidden="true">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" id="brand-mark"></div>
+          <div class="brand-text">
+            <div class="brand-name">SpkPrac</div>
+            <div class="brand-sub">Voice · Practice</div>
+          </div>
+        </div>
+        <nav class="nav" id="nav"></nav>
+        <div class="sidebar-foot">
+          <div class="foot-line">
+            <span class="foot-text" id="foot-theme-label"></span>
+            <button class="btn btn-icon btn-sm" id="theme-toggle"></button>
+          </div>
+          <div class="foot-line"><span class="foot-text faint" id="foot-version"></span></div>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="page-header" id="page-header"></header>
+        <div class="page-body" id="page-body"></div>
+      </main>
+    </div>
+    <div id="session-root"></div>
+    <div id="dialog-root"></div>
+    <div class="toasts" id="toasts"></div>
+
+    <script>
+      /* Preview only — never bundled. Seeds one chat session, opens its detail page, then selects a
+         transcript bubble so the floating toolbar shows. `?demo=translate|ask` also clicks the
+         matching action so its result can be screenshotted. */
+      (function () {
+        var now = Date.now();
+        localStorage.setItem(
+          "spkprac.settings",
+          JSON.stringify({
+            apiKey: "sk-preview",
+            rtEndpoint: "wss://cn-beijing.maas.qianwenaiapi.com/api-ws/v1/realtime",
+            rtModel: "qwen3.8-omni-flash-realtime",
+            flavor: "QWEN",
+            textEndpoint:
+              "https://maas.qianwenaiapi.com/compatible-mode/v1/chat/completions",
+            textModel: "qwen3.8-flash",
+            voice: "Tina",
+            language: "zh",
+            themeMode: "DARK",
+            clonedVoices: [],
+          })
+        );
+        localStorage.setItem(
+          "spkprac.sessions",
+          JSON.stringify([
+            {
+              meta: {
+                id: "s_sel_1",
+                mode: "CHAT",
+                title: "咖啡店闲聊",
+                language: "",
+                createdAt: now - 3600000 * 5,
+                durationMs: 412000,
+                messageCount: 3,
+              },
+              messages: [
+                { id: "m1", role: "USER", text: "I'd like a flat white with oat milk, please.", ts: now, kind: "normal" },
+                {
+                  id: "m2",
+                  role: "ASSISTANT",
+                  text: "Sure thing! A flat white with oat milk coming right up. Would you like anything to eat with that?",
+                  ts: now + 8000,
+                  kind: "normal",
+                },
+                { id: "m3", role: "USER", text: "No thanks, that's all for now.", ts: now + 16000, kind: "normal" },
+              ],
+              report: null,
+            },
+          ])
+        );
+        location.hash = "#/detail/s_sel_1";
+      })();
+
+      /* The headless screenshot pipeline freezes CSS entry animations at their first keyframe, so
+         disable the dialog entry animation for this preview only. */
+      document.addEventListener("DOMContentLoaded", function () {
+        var style = document.createElement("style");
+        style.textContent = ".scrim, .dialog { animation: none !important; }";
+        document.head.appendChild(style);
+      });
+
+      function selectTranscriptText() {
+        var node = document.querySelector("#page-body .bubble-list .msg-text");
+        if (!node) return false;
+        var range = document.createRange();
+        range.selectNodeContents(node);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        document.dispatchEvent(new Event("selectionchange"));
+        document.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        return true;
+      }
+
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          if (!selectTranscriptText()) {
+            setTimeout(arguments.callee, 200);
+            return;
+          }
+          var demo = (/demo=(\w+)/.exec(location.search) || [])[1];
+          if (!demo) return;
+          setTimeout(function () {
+            var action = demo === "ask" ? "ask" : "translate";
+            var button = document.querySelector('[data-sel-act="' + action + '"]');
+            if (button) button.click();
+          }, 500);
+        }, 700);
+      });
+    </script>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/voice.js"></script>
+    <script src="js/markdown.js"></script>
+    <script src="js/selection.js"></script>
+    <script src="js/orb.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/rt.js"></script>
+    <script src="js/session.js"></script>
+    <script src="js/screens/home.js"></script>
+    <script src="js/screens/practice.js"></script>
+    <script src="js/screens/session.js"></script>
+    <script src="js/screens/detail.js"></script>
+    <script src="js/screens/settings.js"></script>
+    <script src="js/screens/voices.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

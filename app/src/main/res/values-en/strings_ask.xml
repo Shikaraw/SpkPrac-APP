@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Selected-text actions (v1.3.0 spec §5.2): the two extra entries in the system text-selection
+  menu plus the result dialog that shows what the text model answered.
+-->
+<resources>
+
+    <!-- selection menu entries (also used as dialog titles) -->
+    <string name="ask_translate">Translate</string>
+    <string name="ask_ai">Ask AI</string>
+
+    <!-- dialog body -->
+    <string name="ask_loading">Asking the text model…</string>
+    <string name="ask_no_model">Configure a text model first: go to Settings → API &amp; models and fill in the text endpoint, API Key and model name.</string>
+    <string name="ask_failed">Request failed: %1$s</string>
+    <string name="ask_copy">Copy</string>
+    <string name="ask_copied">Copied</string>
+
+    <!-- system prompt for "ask AI" (explain / give examples) -->
+    <string name="ask_system_explain">You are a patient language tutor. The user gives you a passage selected from a conversation. Please:\n1. If it is not in English, translate it into English first;\n2. Explain what it means, how it is used and its tone;\n3. Give 1-2 example sentences.\nAnswer in plain English prose without Markdown headings.</string>
+</resources>

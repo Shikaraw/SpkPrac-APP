@@ -24,9 +24,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.spkprac.app.R
 import com.spkprac.app.ui.theme.Brand
 import com.spkprac.app.ui.theme.LocalUiPrefs
 import com.spkprac.app.ui.theme.isDarkScheme
@@ -85,7 +90,24 @@ fun VoiceOrb(
         label = "orbLevel"
     )
 
-    Canvas(modifier.size(size)) {
+    // Canvas draws nothing the accessibility tree can see, so the state has to be spoken here
+    // (spec §4.5: "语音球：正在聆听" rather than silence).
+    val description = stringResource(
+        when (state) {
+            OrbState.IDLE -> R.string.a11y_orb_idle
+            OrbState.CONNECTING -> R.string.a11y_orb_connecting
+            OrbState.LISTENING -> R.string.a11y_orb_listening
+            OrbState.THINKING -> R.string.a11y_orb_thinking
+            OrbState.SPEAKING -> R.string.a11y_orb_speaking
+            OrbState.ERROR -> R.string.a11y_orb_error
+        }
+    )
+
+    Canvas(
+        modifier
+            .size(size)
+            .semantics { contentDescription = description }
+    ) {
         val p = phase.value
         val lv = smoothLevel.value
         val w = this.size.width
@@ -250,7 +272,13 @@ fun ThinkingDots(
     } else {
         remember { mutableFloatStateOf(0.55f) }
     }
-    Canvas(modifier.size(dotSize * 5, dotSize)) {
+    Canvas(
+        // The dots are decorative: the "thinking" label is rendered right next to them, so exposing
+        // six meaningless dots to TalkBack would only add noise.
+        modifier
+            .size(dotSize * 5, dotSize)
+            .clearAndSetSemantics {}
+    ) {
         val p = phase.value
         val gap = dotSize.toPx() * 1.9f
         val r = dotSize.toPx() / 2f
@@ -294,7 +322,12 @@ fun LevelMeter(
     } else {
         remember { mutableFloatStateOf(0f) }
     }
-    Canvas(modifier) {
+    val description = stringResource(
+        if (active) R.string.a11y_level_meter else R.string.a11y_level_meter_muted
+    )
+    Canvas(
+        modifier.semantics { contentDescription = description }
+    ) {
         val lv = smooth.value
         val p = phase.value
         val gap = size.width / bars

@@ -10,6 +10,14 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+/** Hard cap for the context excerpt returned by [SessionRepo.searchContent] (spec §3.1). */
+private const val SEARCH_SNIPPET_MAX = 80
+
+/** How many characters of context are kept on each side of the hit inside the excerpt. */
+private const val SEARCH_SNIPPET_CONTEXT = 24
+
+private val SEARCH_WHITESPACE = Regex("\\s+")
+
 class SessionRepo(private val context: Context) {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = false }
@@ -43,6 +51,39 @@ class SessionRepo(private val context: Context) {
 
     suspend fun deleteAll() = withContext(Dispatchers.IO) {
         dir().listFiles()?.forEach { runCatching { it.delete() } }
+    }
+
+    /**
+     * Full-text search over the stored transcripts (v1.3.0 spec §3.1).
+     *
+     * Returns `sessionId -> excerpt` for every session whose **user or assistant** text contains
+     * [query] (case-insensitive). The excerpt is at most 80 characters and keeps some context
+     * around the hit, marked with a leading/trailing `…`; no highlight markup is included because
+     * the UI decides how to render it.
+     *
+     * An empty query yields an empty map. Reading happens on [Dispatchers.IO] and a single corrupt
+     * session file is skipped instead of failing the whole search.
+     */
+    suspend fun searchContent(query: String): Map<String, String> = withContext(Dispatchers.IO) {
+        val needle = normalizeSearchText(query)
+        if (needle.isEmpty()) return@withContext emptyMap()
+
+        val files = dir().listFiles { f -> f.isFile && f.name.endsWith(".json") }
+            ?: return@withContext emptyMap()
+        val hits = LinkedHashMap<String, String>()
+        for (file in files) {
+            val session = runCatching {
+                json.decodeFromString(StoredSession.serializer(), file.readText())
+            }.getOrNull() ?: continue
+            val key = session.meta.id.ifBlank { file.nameWithoutExtension }
+            if (key.isEmpty() || hits.containsKey(key)) continue
+            val excerpt = session.messages.asSequence()
+                .filter { it.kind == "normal" && (it.role == Role.USER || it.role == Role.ASSISTANT) }
+                .mapNotNull { message -> snippetAround(message.text, needle) }
+                .firstOrNull()
+            if (excerpt != null) hits[key] = excerpt
+        }
+        hits
     }
 
     /** Aggregate statistics used by the home dashboard. */
@@ -88,6 +129,39 @@ class SessionRepo(private val context: Context) {
     }
 
     companion object {
+        /** Collapses runs of whitespace so a multi-line transcript can be matched and shown as one line. */
+        internal fun normalizeSearchText(text: String): String =
+            text.replace(SEARCH_WHITESPACE, " ").trim()
+
+        /**
+         * One-line excerpt around the first case-insensitive occurrence of [query], or null when the
+         * text does not contain it. Worst case length is [SEARCH_SNIPPET_MAX] characters, ellipses
+         * included. Never returns a highlight marker: the caller renders the hit as it likes.
+         */
+        internal fun snippetAround(text: String, query: String): String? {
+            val flat = normalizeSearchText(text)
+            if (flat.isEmpty() || query.isEmpty()) return null
+            val hit = flat.indexOf(query, ignoreCase = true)
+            if (hit < 0) return null
+
+            // Reserve two characters for the optional leading/trailing ellipsis.
+            val budget = SEARCH_SNIPPET_MAX - query.length - 2
+            if (budget <= 0) {
+                // A query longer than the excerpt size: keep the hit itself, truncated.
+                return flat.substring(hit, (hit + SEARCH_SNIPPET_MAX).coerceAtMost(flat.length))
+            }
+            var lead = (budget / 2).coerceAtMost(hit)
+            val tail = (budget - lead)
+                .coerceAtMost((flat.length - hit - query.length).coerceAtLeast(0))
+            // The hit may sit close to an edge; give the unused context budget to the other side.
+            lead = (budget - tail).coerceAtMost(hit)
+            val start = hit - lead
+            val end = hit + query.length + tail
+            val prefix = if (start > 0) "…" else ""
+            val suffix = if (end < flat.length) "…" else ""
+            return prefix + flat.substring(start, end).trim() + suffix
+        }
+
         fun formatDuration(ms: Long): String {
             val totalSec = (ms / 1000).coerceAtLeast(0)
             val h = totalSec / 3600

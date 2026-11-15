@@ -81,6 +81,14 @@ fn sessions_stats(app: AppHandle) -> sessions::HistoryStats {
     sessions::stats(&app)
 }
 
+/// Case-insensitive content search across every stored transcript (spec §3.1).
+#[tauri::command]
+async fn sessions_search(app: AppHandle, query: String) -> Vec<sessions::SearchHit> {
+    tauri::async_runtime::spawn_blocking(move || sessions::search(&app, &query))
+        .await
+        .unwrap_or_default()
+}
+
 #[tauri::command]
 fn session_export_text(app: AppHandle, id: String) -> Result<String, String> {
     let session = sessions::load(&app, &id).ok_or("session not found")?;
@@ -241,6 +249,7 @@ fn main() {
             sessions_delete,
             sessions_delete_all,
             sessions_stats,
+            sessions_search,
             session_export_text,
             sessions_export_all,
             write_export,

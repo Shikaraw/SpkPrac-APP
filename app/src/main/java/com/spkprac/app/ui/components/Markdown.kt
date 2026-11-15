@@ -21,6 +21,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -53,11 +56,20 @@ fun MarkdownText(
                         else -> MaterialTheme.typography.titleSmall
                     },
                     fontWeight = FontWeight.Bold,
-                    color = accent
+                    color = accent,
+                    // Report sections become heading navigation targets for TalkBack.
+                    modifier = Modifier.semantics { heading() }
                 )
 
                 is MdBlock.Bullet -> Row(Modifier.padding(start = 2.dp)) {
-                    Text("•", style = baseStyle, color = accent, modifier = Modifier.width(14.dp))
+                    Text(
+                        "•",
+                        style = baseStyle,
+                        color = accent,
+                        modifier = Modifier
+                            .width(14.dp)
+                            .clearAndSetSemantics {}
+                    )
                     Text(inline(block.text, accent), style = baseStyle)
                 }
 
@@ -67,7 +79,9 @@ fun MarkdownText(
                         style = baseStyle,
                         color = accent,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.width(20.dp)
+                        modifier = Modifier
+                            .width(20.dp)
+                            .clearAndSetSemantics {}
                     )
                     Text(inline(block.text, accent), style = baseStyle)
                 }

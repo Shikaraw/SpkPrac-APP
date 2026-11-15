@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Accessibility-only copy (v1.3.0 spec §4). Everything here is read by TalkBack, not painted on
+  screen, so the wording describes what a control does rather than what it looks like.
+-->
+<resources>
+
+    <!-- self-drawn surfaces: the canvas cannot speak, so the composable carries the description -->
+    <string name="a11y_orb_idle">Voice orb: idle</string>
+    <string name="a11y_orb_connecting">Voice orb: connecting</string>
+    <string name="a11y_orb_listening">Voice orb: listening</string>
+    <string name="a11y_orb_thinking">Voice orb: thinking</string>
+    <string name="a11y_orb_speaking">Voice orb: speaking</string>
+    <string name="a11y_orb_error">Voice orb: connection error</string>
+    <string name="a11y_level_meter">Microphone level</string>
+    <string name="a11y_level_meter_muted">Microphone level: muted</string>
+
+    <!-- session header / controls -->
+    <string name="a11y_elapsed">Elapsed %1$s</string>
+    <string name="a11y_mic_state_muted">Microphone muted</string>
+    <string name="a11y_mic_state_live">Microphone unmuted</string>
+    <string name="a11y_ptt_idle">Double-tap to start recording, double-tap again to stop</string>
+    <string name="a11y_ptt_recording">Recording, double-tap to stop</string>
+
+    <!-- home / lists -->
+    <string name="a11y_clear_search">Clear search</string>
+    <string name="a11y_searching">Searching conversation content</string>
+    <string name="a11y_delete_session">Delete this session</string>
+    <string name="a11y_open_session">Open session details</string>
+    <string name="a11y_open_voice">Open voice details</string>
+
+    <!-- settings -->
+    <string name="a11y_show_key">Show API Key</string>
+    <string name="a11y_hide_key">Hide API Key</string>
+
+    <!-- generic -->
+    <string name="a11y_loading">Loading</string>
+</resources>

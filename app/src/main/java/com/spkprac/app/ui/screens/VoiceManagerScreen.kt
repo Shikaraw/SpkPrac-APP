@@ -52,6 +52,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -180,7 +183,8 @@ fun VoiceManagerScreen(
                 title = {
                     Text(
                         stringResource(R.string.voice_title),
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.semantics { heading() }
                     )
                 },
                 navigationIcon = {
@@ -193,10 +197,12 @@ fun VoiceManagerScreen(
                 },
                 actions = {
                     if (refreshing) {
+                        val loadingDesc = stringResource(R.string.a11y_loading)
                         CircularProgressIndicator(
                             Modifier
                                 .padding(end = 8.dp)
-                                .size(20.dp),
+                                .size(20.dp)
+                                .semantics { contentDescription = loadingDesc },
                             strokeWidth = 2.dp
                         )
                     } else {
@@ -346,10 +352,11 @@ private fun VoiceRow(
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val openLabel = stringResource(R.string.a11y_open_voice)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .pressable(onClick = onClick),
+            .pressable(onClickLabel = openLabel, onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface

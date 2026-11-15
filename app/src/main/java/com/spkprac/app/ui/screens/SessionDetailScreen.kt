@@ -58,6 +58,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.spkprac.app.R
@@ -71,6 +73,10 @@ import com.spkprac.app.ui.components.AuroraBackground
 import com.spkprac.app.ui.components.EmptyState
 import com.spkprac.app.ui.components.MarkdownText
 import com.spkprac.app.ui.components.PillLabel
+import com.spkprac.app.ui.components.SelectableText
+import com.spkprac.app.ui.components.SelectionActions
+import com.spkprac.app.ui.components.SelectionDialogHost
+import com.spkprac.app.ui.components.rememberSelectionActions
 import com.spkprac.app.ui.theme.Brand
 import com.spkprac.app.ui.theme.captionTextStyle
 import com.spkprac.app.ui.theme.isDarkScheme
@@ -85,6 +91,7 @@ fun SessionDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repo = remember { SessionRepo(context) }
+    val selectionActions = rememberSelectionActions()
 
     var session by remember { mutableStateOf<StoredSession?>(null) }
     var loading by remember { mutableStateOf(true) }
@@ -116,7 +123,8 @@ fun SessionDetailScreen(
                     Text(
                         session?.meta?.title ?: stringResource(R.string.recent_sessions),
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1
+                        maxLines = 1,
+                        modifier = Modifier.semantics { heading() }
                     )
                 },
                 navigationIcon = {
@@ -168,7 +176,7 @@ fun SessionDetailScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
 
-                    else -> DetailContent(session!!)
+                    else -> DetailContent(session!!, selectionActions)
                 }
             }
         }
@@ -193,10 +201,12 @@ fun SessionDetailScreen(
             }
         )
     }
+
+    SelectionDialogHost(selectionActions)
 }
 
 @Composable
-private fun DetailContent(s: StoredSession) {
+private fun DetailContent(s: StoredSession, selectionActions: SelectionActions) {
     val practice = s.meta.mode == Mode.PRACTICE
     val accent = if (practice) Brand.warm(isDarkScheme()).first() else Brand.accent(isDarkScheme()).first()
 
@@ -278,7 +288,9 @@ private fun DetailContent(s: StoredSession) {
                                 stringResource(R.string.practice_report),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .semantics { heading() }
                             )
                             Icon(
                                 Icons.Default.RecordVoiceOver,
@@ -299,18 +311,20 @@ private fun DetailContent(s: StoredSession) {
                 stringResource(R.string.recent_sessions),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 6.dp, bottom = 2.dp)
+                modifier = Modifier
+                    .padding(top = 6.dp, bottom = 2.dp)
+                    .semantics { heading() }
             )
         }
 
         items(s.messages, key = { it.id }) { m ->
-            DetailBubble(m)
+            DetailBubble(m, selectionActions)
         }
     }
 }
 
 @Composable
-private fun DetailBubble(m: ChatMessage) {
+private fun DetailBubble(m: ChatMessage, selectionActions: SelectionActions) {
     val isUser = m.role == Role.USER
     val accent = Brand.accent(isDarkScheme())
     Column(
@@ -349,10 +363,14 @@ private fun DetailBubble(m: ChatMessage) {
                     .padding(horizontal = 14.dp, vertical = 10.dp)
                     .widthIn(max = 320.dp)
             ) {
-                Text(
-                    m.text,
+                SelectableText(
+                    text = m.text,
+                    style = captionTextStyle(),
                     color = if (isUser) Color.White else MaterialTheme.colorScheme.onSurface,
-                    style = captionTextStyle()
+                    highlightColor = if (isUser) Color.White.copy(alpha = 0.35f)
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
+                    onTranslate = selectionActions::translate,
+                    onAskAi = selectionActions::askAi
                 )
             }
         }

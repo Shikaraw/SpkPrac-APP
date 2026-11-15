@@ -45,6 +45,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.spkprac.app.R
@@ -115,7 +117,13 @@ fun PracticeSetupScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.mode_practice), fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(R.string.mode_practice),
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.semantics { heading() }
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
@@ -238,7 +246,10 @@ private fun StartButton(label: String, onClick: () -> Unit) {
             .height(56.dp)
             .clip(RoundedCornerShape(28.dp))
             .background(Brush.horizontalGradient(accent))
-            .pressable(scaleTo = 0.98f, onClick = onClick),
+            // The button is a plain Box with visible text; merging gives TalkBack one labelled
+            // button instead of an unlabelled clickable container (spec §4.7).
+            .pressable(scaleTo = 0.98f, onClickLabel = label, onClick = onClick)
+            .semantics(mergeDescendants = true) {},
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

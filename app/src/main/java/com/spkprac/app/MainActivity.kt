@@ -1,11 +1,16 @@
 package com.spkprac.app
 
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -23,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.compose.runtime.collectAsState
 import com.spkprac.app.core.SessionStartConfig
@@ -44,6 +50,7 @@ import com.spkprac.app.ui.screens.VoiceDetailScreen
 import com.spkprac.app.ui.screens.VoiceManagerScreen
 import com.spkprac.app.ui.theme.SpkPracTheme
 import com.spkprac.app.ui.theme.UiPrefs
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
 sealed class Screen {
@@ -60,6 +67,12 @@ sealed class Screen {
 
 /** Automatic update checks never run more often than this, even across restarts. */
 private const val AUTO_CHECK_INTERVAL_MS = 24L * 60L * 60L * 1000L
+
+/** How long the POST_NOTIFICATIONS request waits for the RECORD_AUDIO dialog to settle first. */
+private const val PERMISSION_ORDER_TIMEOUT_MS = 20_000L
+
+/** Poll interval while waiting for the microphone permission (it is only granted via a system dialog). */
+private const val PERMISSION_ORDER_POLL_MS = 250L
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -120,6 +133,45 @@ fun AppRoot() {
 
     SpkPracTheme(themeMode = settings.themeMode, uiPrefs = uiPrefs) {
         var screen by remember { mutableStateOf<Screen>(Screen.Home) }
+
+        // POST_NOTIFICATIONS (Android 13+) is only needed for the ongoing "练习中" notification, so it
+        // is requested the first time a session screen opens — never at launch (v1.3.0 spec §1.4).
+        // Denying it is fine: the foreground service still runs, the app just shows no notification.
+        var notificationPermissionAsked by remember { mutableStateOf(false) }
+        val notificationPermissionLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { /* Granted or denied: the session must work either way. */ }
+        val sessionOpen = screen is Screen.Session
+        LaunchedEffect(sessionOpen) {
+            if (!sessionOpen || notificationPermissionAsked) return@LaunchedEffect
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return@LaunchedEffect
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                return@LaunchedEffect
+            }
+            // SessionScreen opens the RECORD_AUDIO dialog on entry; two permission requests cannot be
+            // in flight at once (the second is dropped silently), so wait until the microphone request
+            // has settled — RECORD_AUDIO is needed for the foreground service type anyway.
+            var waitedMs = 0L
+            while (waitedMs < PERMISSION_ORDER_TIMEOUT_MS &&
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                delay(PERMISSION_ORDER_POLL_MS)
+                waitedMs += PERMISSION_ORDER_POLL_MS
+            }
+            // Leaving the session screen cancels this effect; only ask while it is still open.
+            if (screen !is Screen.Session) return@LaunchedEffect
+            notificationPermissionAsked = true
+            runCatching {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         BackHandler(enabled = screen !is Screen.Home) {
             // Nested pages pop one level instead of jumping straight home.

@@ -4,7 +4,7 @@
     <string name="home_stat_sessions">Sessions</string>
     <string name="home_stat_time">Total time</string>
     <string name="home_stat_streak">Day streak</string>
-    <string name="home_search_hint">Search sessions by title or language…</string>
+    <string name="home_search_hint">Search titles, languages or conversation content…</string>
     <string name="home_no_results">No matching sessions</string>
     <string name="home_delete_title">Delete this session?</string>
     <string name="home_delete_msg">The transcript and practice report will be deleted permanently.</string>

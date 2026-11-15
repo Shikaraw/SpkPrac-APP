@@ -63,6 +63,14 @@ pub struct HistoryStats {
     pub practice_sessions: i32,
 }
 
+/// One content-search hit: `snippet` is already truncated with `…` context (no markup).
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchHit {
+    pub id: String,
+    pub snippet: String,
+}
+
 fn dir(app: &tauri::AppHandle) -> PathBuf {
     use tauri::Manager;
     let base = app
@@ -234,4 +242,142 @@ pub fn now_ms() -> i64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
         .unwrap_or(0)
+}
+
+// ---------------------------------------------------------------- content search (spec §3.1)
+
+/// Snippet budget in characters. Two of these are reserved for the `…` markers so the whole
+/// snippet stays ≤ 80 characters (contract: 片段 ≤ 80 字，前后带上下文).
+const SNIPPET_CONTENT_CHARS: usize = 78;
+const SNIPPET_LEAD_CHARS: usize = 30;
+
+/// Builds a one-line context snippet around the first case-insensitive match of `needle_lower`.
+/// Returns `None` when the message does not contain the query.
+fn make_snippet(text: &str, needle_lower: &str) -> Option<String> {
+    if needle_lower.is_empty() || text.is_empty() {
+        return None;
+    }
+    let chars: Vec<char> = text.chars().collect();
+    let lowered = text.to_lowercase();
+    let byte_pos = lowered.find(needle_lower)?;
+    // Map a byte offset in the lowercased copy back to a char index. Case folding rarely changes
+    // the character count, but clamp so a surprise cannot panic.
+    let mut hit = lowered[..byte_pos]
+        .chars()
+        .count()
+        .min(chars.len().saturating_sub(1));
+    let hit_len = needle_lower.chars().count();
+    let hit_end = (hit + hit_len).min(chars.len());
+    if hit >= chars.len() {
+        hit = chars.len() - 1;
+    }
+
+    let mut start = hit.saturating_sub(SNIPPET_LEAD_CHARS);
+    let mut end = (start + SNIPPET_CONTENT_CHARS).min(chars.len());
+    // Make sure the match itself always fits, even when it is longer than the lead window.
+    if end < hit_end {
+        end = hit_end.min(chars.len());
+        start = end.saturating_sub(SNIPPET_CONTENT_CHARS);
+    }
+    let body: String = chars[start..end].iter().collect();
+    let body = body.split_whitespace().collect::<Vec<_>>().join(" ");
+    let body = body.trim().chars().take(SNIPPET_CONTENT_CHARS).collect::<String>();
+    if body.is_empty() {
+        return None;
+    }
+    let mut snippet = String::with_capacity(body.len() + 2);
+    if start > 0 {
+        snippet.push('…');
+    }
+    snippet.push_str(&body);
+    if end < chars.len() {
+        snippet.push('…');
+    }
+    Some(snippet)
+}
+
+/// Case-insensitive full-text search over every stored session's messages. A corrupt session file
+/// is skipped instead of failing the whole search (spec §3.1). Newest sessions come first.
+pub fn search(app: &tauri::AppHandle, query: &str) -> Vec<SearchHit> {
+    let needle = query.trim().to_lowercase();
+    if needle.is_empty() {
+        return Vec::new();
+    }
+    let mut hits: Vec<(i64, SearchHit)> = Vec::new();
+    let entries = match fs::read_dir(dir(app)) {
+        Ok(entries) => entries,
+        Err(_) => return Vec::new(),
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().map(|ext| ext != "json").unwrap_or(true) {
+            continue;
+        }
+        let text = match fs::read_to_string(&path) {
+            Ok(text) => text,
+            Err(_) => continue,
+        };
+        let stored: StoredSession = match serde_json::from_str(&text) {
+            Ok(stored) => stored,
+            Err(_) => continue,
+        };
+        let snippet = stored
+            .messages
+            .iter()
+            .find_map(|message| make_snippet(&message.text, &needle));
+        if let Some(snippet) = snippet {
+            hits.push((
+                stored.meta.created_at,
+                SearchHit {
+                    id: stored.meta.id,
+                    snippet,
+                },
+            ));
+        }
+    }
+    hits.sort_by(|a, b| b.0.cmp(&a.0));
+    hits.into_iter().map(|(_, hit)| hit).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn snippet_is_full_text_when_short() {
+        let snippet = make_snippet("I want a coffee", "coffee").unwrap();
+        assert_eq!(snippet, "I want a coffee");
+    }
+
+    #[test]
+    fn snippet_is_case_insensitive_and_bounded() {
+        let text = format!(
+            "{} I LOVE Mango smoothies {}",
+            "word ".repeat(40),
+            "tail ".repeat(40)
+        );
+        let snippet = make_snippet(&text, "mango").unwrap();
+        assert!(snippet.contains("Mango"), "keeps the original casing: {snippet}");
+        assert!(snippet.starts_with('…'), "leading context marker: {snippet}");
+        assert!(snippet.ends_with('…'), "trailing context marker: {snippet}");
+        assert!(
+            snippet.chars().count() <= 80,
+            "snippet must stay ≤ 80 chars, got {}",
+            snippet.chars().count()
+        );
+    }
+
+    #[test]
+    fn snippet_handles_cjk() {
+        let text = format!("{}这是一段中文字幕内容，用来验证片段截断。{}", "前".repeat(50), "后".repeat(50));
+        let snippet = make_snippet(&text, "中文字幕").unwrap();
+        assert!(snippet.contains("中文字幕"));
+        assert!(snippet.chars().count() <= 80);
+    }
+
+    #[test]
+    fn snippet_returns_none_without_match() {
+        assert!(make_snippet("hello", "world").is_none());
+        assert!(make_snippet("hello", "").is_none());
+    }
 }

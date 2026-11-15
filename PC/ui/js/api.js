@@ -62,6 +62,30 @@
     return JSON.parse(localStorage.getItem(MOCK_SESSIONS) || "[]");
   }
 
+  /** Mirrors the Rust snippet rule (≤ 80 chars, … context) for browser previews. */
+  function mockSnippet(text, needle) {
+    const chars = Array.from(String(text || ""));
+    const lower = String(text || "").toLowerCase();
+    const pos = lower.indexOf(needle);
+    if (pos < 0) return "";
+    const hit = Math.min(Array.from(lower.slice(0, pos)).length, chars.length - 1);
+    const hitEnd = Math.min(chars.length, hit + Array.from(needle).length);
+    let start = Math.max(0, hit - 30);
+    let end = Math.min(chars.length, start + 78);
+    if (end < hitEnd) {
+      end = Math.min(chars.length, hitEnd);
+      start = Math.max(0, end - 78);
+    }
+    const body = chars
+      .slice(start, end)
+      .join("")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 78);
+    if (!body) return "";
+    return (start > 0 ? "…" : "") + body + (end < chars.length ? "…" : "");
+  }
+
   const now = Date.now();
   const sample = [
     {
@@ -106,7 +130,7 @@
 
   const mock = {
     app_info: () => ({
-      version: "0.1.1",
+      version: "1.3.0",
       dataDir: "C:\\Users\\You\\AppData\\Roaming\\com.spkprac.pc",
       sessionsDir: "C:\\Users\\You\\AppData\\Roaming\\com.spkprac.pc\\sessions",
       platform: "windows",
@@ -187,6 +211,20 @@
         practiceSessions: list.filter((m) => m.mode === "PRACTICE").length,
       };
     },
+    // Browser preview for the transcript content search (spec §3.1).
+    sessions_search: ({ query }) => {
+      const q = String(query || "").trim().toLowerCase();
+      if (!q) return [];
+      const list = mockSessions().length ? mockSessions() : sample;
+      return list
+        .map((session) => {
+          const hit = (session.messages || []).find((m) =>
+            String(m.text || "").toLowerCase().includes(q)
+          );
+          return hit ? { id: session.meta.id, snippet: mockSnippet(hit.text, q) } : null;
+        })
+        .filter(Boolean);
+    },
     sessions_export_all: () => "# mock export\n",
     session_export_text: ({ id }) => {
       const s = (mockSessions().length ? mockSessions() : sample).find((x) => x.meta.id === id);
@@ -201,7 +239,18 @@
     },
     rt_send: () => null,
     rt_close: () => null,
-    text_complete: () => "# mock report\n\n这是浏览器预览模式的占位报告。",
+    text_complete: ({ messages }) => {
+      const system = (messages && messages[0] && messages[0][1]) || "";
+      const user = (messages && messages[1] && messages[1][1]) || "";
+      if (String(system).indexOf("translation engine") >= 0) {
+        return "这是浏览器预览的模拟译文：" + user;
+      }
+      return (
+        "## 模拟 AI 解释\n\n- **含义**：" +
+        user +
+        "\n- **用法**：这是浏览器 mock 返回的占位内容。\n\n示例：*Could I get a coffee with milk, please?*"
+      );
+    },
     check_update: () => ({ kind: "uptodate", info: null, message: null }),
     download_update: () => "C:\\mock.exe",
   };
@@ -268,6 +317,7 @@
     deleteSession: (id) => call("sessions_delete", { id }),
     deleteAllSessions: () => call("sessions_delete_all"),
     stats: () => call("sessions_stats"),
+    searchSessions: (query) => call("sessions_search", { query }),
     exportAll: () => call("sessions_export_all"),
     exportText: (id) => call("session_export_text", { id }),
     writeExport: (fileName, content) => call("write_export", { fileName, content }),
